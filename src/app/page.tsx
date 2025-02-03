@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import FoodSearch from "@/sections/Food_Search";
 import Hero from "@/sections/Hero";
+import IngredientScanPage from "@/sections/barcode"
 import AI from "@/sections/AI";
 
 import textTranslator from "@/sections/textTranslator";
@@ -35,6 +36,7 @@ export default function Home() {
     <>
       <Hero/>
       <textTranslator/>
+      <IngredientScanPage/>
       <FoodSearch/>
       <nav className="flex justify-end p-4">
         {isAuthenticated ? (
