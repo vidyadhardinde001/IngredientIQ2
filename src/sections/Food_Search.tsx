@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import axios from "axios";
+import NutriScoreSection from "./Nutriscore";
+
 import {
   Container,
   Grid,
@@ -38,7 +40,7 @@ import {
   Tooltip as ChartTooltip,
   Legend,
 } from "chart.js";
-import NutriScoreSection from "./Nutriscore"; // Import the new NutriScore section
+
 
 ChartJS.register(
   BarElement,
