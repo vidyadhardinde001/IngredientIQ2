@@ -5,8 +5,8 @@ import FoodSearch from "@/sections/Food_Search";
 import Hero from "@/sections/Hero";
 import IngredientScanPage from "@/sections/barcode"
 import AI from "@/sections/AI";
+import Main  from "@/sections/Main";
 
-import textTranslator from "@/sections/textTranslator";
 
 import Link from "next/link";
 
@@ -35,7 +35,7 @@ export default function Home() {
   return (
     <>
       <Hero/>
-      <textTranslator/>
+      <Main/>
       <IngredientScanPage/>
       <FoodSearch/>
       <nav className="flex justify-end p-4">
