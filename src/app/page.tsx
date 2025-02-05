@@ -3,10 +3,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import FoodSearch from "@/sections/Food_Search";
 import Hero from "@/sections/Hero";
-import IngredientScanPage from "@/sections/barcode"
+import IngredientScanPage from "@/sections/barcode";
 import AI from "@/sections/AI";
-import Main  from "@/sections/Main";
-
+import Main from "@/sections/Main";
 
 import Link from "next/link";
 
@@ -34,10 +33,9 @@ export default function Home() {
 
   return (
     <>
-      <Hero/>
-      <Main/>
-      <IngredientScanPage/>
-      <FoodSearch/>
+      <Hero />
+      <FoodSearch />
+
       <nav className="flex justify-end p-4">
         {isAuthenticated ? (
           <button onClick={handleLogout} className="text-red-600">
@@ -45,11 +43,15 @@ export default function Home() {
           </button>
         ) : (
           <>
-            <Link href="/login" className="mr-4 text-blue-600">Login</Link>
-            <Link href="/register" className="text-blue-600">Register</Link>
+            <Link href="/login" className="mr-4 text-blue-600">
+              Login
+            </Link>
+            <Link href="/register" className="text-blue-600">
+              Register
+            </Link>
           </>
         )}
       </nav>
     </>
   );
-} 
+}

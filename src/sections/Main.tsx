@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Box, Button } from "@mui/material";
-import SearchAndScan from "./SearchAndScan"; // Import your SearchAndScan component
+import SearchAndScan from "./SearchInput"; // Import your SearchAndScan component
 
 const App: React.FC = () => {
   // Create state for barcode and product name
