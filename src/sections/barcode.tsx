@@ -5,7 +5,6 @@ const IngredientDetailsPage = () => {
   const [image, setImage] = useState<string | null>(null);
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [ingredientDetails, setIngredientDetails] = useState<any | null>(null);
-
   // Handle image upload
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -17,14 +16,12 @@ const IngredientDetailsPage = () => {
       reader.readAsDataURL(file);
     }
   };
-
   // Extract text from the image (OCR)
   const handleScan = () => {
     if (image) {
       extractIngredients(image);
     }
   };
-
   // Using Tesseract.js to extract text
   const extractIngredients = (imageDataUrl: string) => {
     Tesseract.recognize(imageDataUrl, "eng", {
@@ -35,7 +32,6 @@ const IngredientDetailsPage = () => {
       setIngredients(ingredientsList);
     });
   };
-
   // Fetch ingredient details (Example: using a mock API or hardcoded data)
   const fetchIngredientDetails = async (ingredient: string) => {
     try {
@@ -47,7 +43,6 @@ const IngredientDetailsPage = () => {
       console.error("Error fetching ingredient details:", error);
     }
   };
-
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-center mb-6 text-indigo-600">
@@ -61,7 +56,6 @@ const IngredientDetailsPage = () => {
           className="file-upload bg-indigo-500 text-white py-2 px-4 rounded-full cursor-pointer hover:bg-indigo-600 transition duration-300"
         />
       </div>
-
       {image && (
         <div className="flex justify-center mb-6">
           <div>
@@ -70,7 +64,6 @@ const IngredientDetailsPage = () => {
           </div>
         </div>
       )}
-
       <div className="text-center mb-6">
         <button
           onClick={handleScan}
@@ -79,7 +72,6 @@ const IngredientDetailsPage = () => {
           Extract Ingredients
         </button>
       </div>
-
       {ingredients.length > 0 && (
         <div className="bg-white p-6 rounded-lg shadow-md mb-6">
           <h3 className="text-2xl font-semibold text-center mb-4">Extracted Ingredients:</h3>
@@ -98,7 +90,6 @@ const IngredientDetailsPage = () => {
           </ul>
         </div>
       )}
-
       {ingredientDetails && (
         <div className="bg-gray-100 p-6 rounded-lg shadow-md">
           <h3 className="text-2xl font-semibold text-center mb-4">Ingredient Details:</h3>
@@ -114,5 +105,4 @@ const IngredientDetailsPage = () => {
     </div>
   );
 };
-
 export default IngredientDetailsPage;

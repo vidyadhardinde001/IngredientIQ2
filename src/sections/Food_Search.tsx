@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState } from "react";
 import axios from "axios";
 import SearchInput from "./SearchInput";
@@ -58,50 +57,66 @@ const FoodSearch: React.FC = () => {
 
   return (
     <div className="w-[98%] mx-auto mt-6 px-4">
-      {/* Search Input Section */}
-      <SearchInput
-        barcode={barcode}
-        setBarcode={setBarcode}
-        productName={productName}
-        setProductName={setProductName}
-        fetchFoodByBarcode={fetchFoodByBarcode}
-        fetchFoodByName={fetchFoodByName}
-      />
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6">
+        {/* Left Section: Search Input & Product List (Stacked) */}
+        <div className="flex flex-col gap-4">
+          {/* Search Input */}
+          <div className="bg-gray-800 p-4 rounded-lg">
+            <SearchInput
+              barcode={barcode}
+              setBarcode={setBarcode}
+              productName={productName}
+              setProductName={setProductName}
+              fetchFoodByBarcode={fetchFoodByBarcode}
+              fetchFoodByName={fetchFoodByName}
+            />
+          </div>
 
-      {/* Loading Spinner */}
-      {loading && <div className="text-center mt-4 text-white animate-spin">🔄</div>}
-
-      {/* Error Message */}
-      {error && <p className="text-red-500 text-center mt-4">{error}</p>}
-
-      {/* Sidebar Layout: Search & List on Left, Details on Right */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-4 mt-6">
-        {/* Left: Product List */}
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <ProductList foodDataList={foodDataList} setSelectedProduct={setSelectedProduct} />
+          {/* Product List */}
+          <div className="bg-gray-800 p-4 rounded-lg flex-1">
+            <ProductList
+              foodDataList={foodDataList}
+              setSelectedProduct={setSelectedProduct}
+            />
+          </div>
         </div>
 
-        {/* Right: Product Details & Nutritional Info */}
+        {/* Right Section: Product Details & Nutrition */}
         <div className="flex flex-col gap-4">
           {/* Product Details */}
-          <div className="bg-gray-900 p-4 rounded-lg">
-            {selectedProduct && <ProductDetails selectedProduct={selectedProduct} />}
+          <div className="bg-white rounded-lg">
+            {selectedProduct && (
+              <ProductDetails selectedProduct={selectedProduct} />
+            )}
           </div>
 
           {/* Nutritional Breakdown & Chart */}
           {selectedProduct && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <NutritionalBreakdown selectedProduct={selectedProduct} />
-              </div>
-              <div className="bg-gray-800 p-4 rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Nutritional Chart (Full Width) */}
+              <div className="bg-gray-800 p-6 rounded-xl shadow-lg w-full col-span-2 flex flex-col items-center">
+                <h2 className="text-lg font-semibold text-white mb-4">
+                  Nutritional Chart
+                </h2>
                 <NutritionalChart
-                  labels={["Energy (kcal)", "Fat (g)", "Sugars (g)", "Salt (g)"]}
+                  labels={[
+                    "Energy (kcal)",
+                    "Carbs (g)",
+                    "Fat (g)",
+                    "Sugars (g)",
+                    "Salt (g)",
+                    "Fibre (g)",
+                    "Proteins (g)",
+                  ]}
                   values={[
-                    selectedProduct.nutriments?.energy_kcal || 0,
-                    selectedProduct.nutriments?.fat || 0,
-                    selectedProduct.nutriments?.sugars || 0,
-                    selectedProduct.nutriments?.salt || 0,
+                    selectedProduct.nutriments?.energy_100g / 100 || 0,
+                    selectedProduct.nutriments?.carbohydrates_100g || 0,
+                    selectedProduct.nutriments?.fat_100g || 0,
+                    selectedProduct.nutriments?.sugars_100g || 0,
+                    selectedProduct.nutriments?.salt_100g || 0,
+                    selectedProduct.nutriments?.fibre_100g || 0, // Added missing fibre value
+                    selectedProduct.nutriments?.proteins_100g || 0,
                   ]}
                   label="Nutrition Per 100g"
                 />
@@ -117,6 +132,14 @@ const FoodSearch: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Loading Spinner */}
+      {loading && (
+        <div className="text-center mt-4 text-white animate-spin">🔄</div>
+      )}
+
+      {/* Error Message */}
+      {error && <p className="text-red-500 text-center mt-4">{error}</p>}
     </div>
   );
 };

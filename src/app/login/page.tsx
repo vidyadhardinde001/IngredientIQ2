@@ -27,21 +27,15 @@ export default function Login() {
       });
 
       const data = await res.json();
-      
 
       if (!res.ok || !data.token) {
         localStorage.removeItem("token"); // Clear token if login failed
         throw new Error(data.error || "Invalid email or password");
       }
-      else{
-        localStorage.setItem("token", data.token);
-      window.dispatchEvent(new Event("storage")); // Manually trigger an update on `Home.tsx`
-      router.push("/");
-      }
 
-    //   localStorage.setItem("token", data.token);
-    //   window.dispatchEvent(new Event("storage")); // Manually trigger an update on `Home.tsx`
-    //   router.push("/");
+      localStorage.setItem("token", data.token);
+      window.dispatchEvent(new Event("storage")); // Notify `Home` or other components
+      router.push("/"); // Redirect after successful login
     } catch (err: any) {
       setError(err.message || "Login failed");
     }
@@ -59,6 +53,7 @@ export default function Login() {
           required
           className="w-full p-2 border rounded mb-2"
           onChange={handleChange}
+          value={formData.email}
         />
         <input
           type="password"
@@ -67,8 +62,11 @@ export default function Login() {
           required
           className="w-full p-2 border rounded mb-4"
           onChange={handleChange}
+          value={formData.password}
         />
-        <button className="w-full p-2 bg-blue-600 text-white rounded">Login</button>
+        <button className="w-full p-2 bg-blue-600 text-white rounded hover:bg-blue-500">
+          Login
+        </button>
       </form>
     </div>
   );

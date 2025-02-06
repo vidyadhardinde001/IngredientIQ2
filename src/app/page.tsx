@@ -6,6 +6,7 @@ import Hero from "@/sections/Hero";
 import IngredientScanPage from "@/sections/barcode";
 import AI from "@/sections/AI";
 import Main from "@/sections/Main";
+import Login from "@/sections/Login";
 
 import Link from "next/link";
 
@@ -33,25 +34,8 @@ export default function Home() {
 
   return (
     <>
-      <Hero />
+      <Login />
       <FoodSearch />
-
-      <nav className="flex justify-end p-4">
-        {isAuthenticated ? (
-          <button onClick={handleLogout} className="text-red-600">
-            Logout
-          </button>
-        ) : (
-          <>
-            <Link href="/login" className="mr-4 text-blue-600">
-              Login
-            </Link>
-            <Link href="/register" className="text-blue-600">
-              Register
-            </Link>
-          </>
-        )}
-      </nav>
     </>
   );
 }
