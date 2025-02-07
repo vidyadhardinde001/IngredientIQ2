@@ -9,7 +9,9 @@ const DetailedInfo: React.FC<Props> = ({ selectedProduct }) => {
 
   return (
     <div className="shadow-lg rounded-lg overflow-hidden bg-white">
-      <h2 className="text-xl font-bold text-center p-4 bg-gray-100">Ingredients Information</h2>
+      <h2 className="text-xl font-bold text-center p-4 bg-gray-100">
+        Ingredients Information
+      </h2>
 
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
@@ -22,14 +24,37 @@ const DetailedInfo: React.FC<Props> = ({ selectedProduct }) => {
             </tr>
           </thead>
           <tbody>
-            {selectedProduct?.ingredients?.slice(0, visibleRows).map((ingredient: any, index: number) => (
-              <tr key={index} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                <td className="px-4 py-2 border">{ingredient.text || "N/A"}</td>
-                <td className="px-4 py-2 border">{ingredient.percent_max ? `${ingredient.percent_max.toFixed(2)}%` : "N/A"}</td>
-                <td className="px-4 py-2 border">{ingredient.vegan ? ingredient.vegan.charAt(0).toUpperCase() + ingredient.vegan.slice(1) : "N/A"}</td>
-                <td className="px-4 py-2 border">{ingredient.vegetarian ? ingredient.vegetarian.charAt(0).toUpperCase() + ingredient.vegetarian.slice(1) : "N/A"}</td>
-              </tr>
-            ))}
+            {selectedProduct?.ingredients
+              ?.slice(0, visibleRows)
+              .map((ingredient: any, index: number) => (
+                <tr
+                  key={index}
+                  className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}
+                >
+                  <td className="px-4 py-2 border">
+                    {ingredient.text || "N/A"}
+                  </td>
+                  <td className="px-4 py-2 border">
+                    {ingredient.percent_max &&
+                    !isNaN(Number(ingredient.percent_max))
+                      ? `${Number(ingredient.percent_max).toFixed(2)}%`
+                      : "N/A"}
+                  </td>
+
+                  <td className="px-4 py-2 border">
+                    {ingredient.vegan
+                      ? ingredient.vegan.charAt(0).toUpperCase() +
+                        ingredient.vegan.slice(1)
+                      : "N/A"}
+                  </td>
+                  <td className="px-4 py-2 border">
+                    {ingredient.vegetarian
+                      ? ingredient.vegetarian.charAt(0).toUpperCase() +
+                        ingredient.vegetarian.slice(1)
+                      : "N/A"}
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>
