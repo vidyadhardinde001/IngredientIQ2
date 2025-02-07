@@ -8,7 +8,7 @@ interface Props {
   setBarcode: (value: string) => void; // Added for barcode input
   fetchFoodByName: () => void;
   fetchFoodByBarcode: () => void;
-  fetchIngredients: () => void;
+  fetchIngredients: () => Promise<void>;
 }
 
 const SearchInput: React.FC<Props> = ({

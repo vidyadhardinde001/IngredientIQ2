@@ -8,7 +8,7 @@ const DetailedInfo: React.FC<Props> = ({ selectedProduct }) => {
   const [visibleRows, setVisibleRows] = useState(5);
 
   return (
-    <div className="mt-4 shadow-lg rounded-lg overflow-hidden bg-white">
+    <div className="shadow-lg rounded-lg overflow-hidden bg-white">
       <h2 className="text-xl font-bold text-center p-4 bg-gray-100">Ingredients Information</h2>
 
       <div className="overflow-x-auto">

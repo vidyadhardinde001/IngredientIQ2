@@ -59,4 +59,34 @@
     max-width: 80%; 
     padding: 2rem; 
   }*/
+  @keyframes diagonal-glow {
+    0% {
+      transform: translateX(-100%) translateY(-100%);
+    }
+    100% {
+      transform: translateX(100%) translateY(100%);
+    }
+  }
+  
+  @keyframes shimmer {
+    100% {
+      background-position: -200% -200%;
+    }
+    0% {
+      background-position: 200% 200%;
+    }
+  }
+  
+  .skeleton-shimmer {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0) 60%);
+    background-size: 200% 200%;
+    animation: shimmer 2s infinite ease-in-out;
+  }
+  
+  .animate-glow {
+    animation: diagonal-glow 2s infinite linear alternate;
+  }
+  
 }

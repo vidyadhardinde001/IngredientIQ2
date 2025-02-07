@@ -4,9 +4,9 @@ import axios from "axios";
 import SearchInput from "./SearchInput";
 import ProductList from "./ProductList";
 import ProductDetails from "./ProductDetails";
-import NutritionalBreakdown from "./NutritionalBreakdown";
 import DetailedInfo from "./DetailedInfo";
 import NutritionalChart from "./NutritionalChart";
+import SkeletonLoader from "./SkeletonLoader";
 
 const FoodSearch: React.FC = () => {
   const [barcode, setBarcode] = useState<string>("");
@@ -29,10 +29,11 @@ const FoodSearch: React.FC = () => {
       } else {
         setError("Product not found.");
       }
-    } catch (err) {
+    } catch {
       setError("Failed to fetch data.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const fetchFoodByName = async () => {
@@ -49,19 +50,17 @@ const FoodSearch: React.FC = () => {
       } else {
         setError("No products found.");
       }
-    } catch (err) {
+    } catch {
       setError("Failed to fetch data.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
     <div className="w-[98%] mx-auto mt-6 px-4">
-      {/* Main Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6">
-        {/* Left Section: Search Input & Product List (Stacked) */}
         <div className="flex flex-col gap-4">
-          {/* Search Input */}
           <div className="bg-gray-800 p-4 rounded-lg">
             <SearchInput
               barcode={barcode}
@@ -73,28 +72,29 @@ const FoodSearch: React.FC = () => {
             />
           </div>
 
-          {/* Product List */}
           <div className="bg-gray-800 p-4 rounded-lg flex-1">
-            <ProductList
-              foodDataList={foodDataList}
-              setSelectedProduct={setSelectedProduct}
-            />
+            {loading ? (
+              <SkeletonLoader type="list" />
+            ) : (
+              <ProductList
+                foodDataList={foodDataList}
+                setSelectedProduct={setSelectedProduct}
+              />
+            )}
           </div>
         </div>
 
-        {/* Right Section: Product Details & Nutrition */}
         <div className="flex flex-col gap-4">
-          {/* Product Details */}
           <div className="bg-white rounded-lg">
-            {selectedProduct && (
-              <ProductDetails selectedProduct={selectedProduct} />
+            {loading ? (
+              <SkeletonLoader type="details" />
+            ) : (
+              selectedProduct && <ProductDetails selectedProduct={selectedProduct} />
             )}
           </div>
 
-          {/* Nutritional Breakdown & Chart */}
           {selectedProduct && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Nutritional Chart (Full Width) */}
               <div className="bg-gray-800 p-6 rounded-xl shadow-lg w-full col-span-2 flex flex-col items-center">
                 <h2 className="text-lg font-semibold text-white mb-4">
                   Nutritional Chart
@@ -115,7 +115,7 @@ const FoodSearch: React.FC = () => {
                     selectedProduct.nutriments?.fat_100g || 0,
                     selectedProduct.nutriments?.sugars_100g || 0,
                     selectedProduct.nutriments?.salt_100g || 0,
-                    selectedProduct.nutriments?.fibre_100g || 0, // Added missing fibre value
+                    selectedProduct.nutriments?.fibre_100g || 0,
                     selectedProduct.nutriments?.proteins_100g || 0,
                   ]}
                   label="Nutrition Per 100g"
@@ -124,7 +124,6 @@ const FoodSearch: React.FC = () => {
             </div>
           )}
 
-          {/* Additional Product Info */}
           {selectedProduct && (
             <div className="bg-gray-800 p-4 rounded-lg">
               <DetailedInfo selectedProduct={selectedProduct} />
@@ -133,12 +132,6 @@ const FoodSearch: React.FC = () => {
         </div>
       </div>
 
-      {/* Loading Spinner */}
-      {loading && (
-        <div className="text-center mt-4 text-white animate-spin">🔄</div>
-      )}
-
-      {/* Error Message */}
       {error && <p className="text-red-500 text-center mt-4">{error}</p>}
     </div>
   );
