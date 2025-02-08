@@ -13,8 +13,12 @@ const FoodSearch: React.FC = () => {
   const [productName, setProductName] = useState<string>("");
   const [foodDataList, setFoodDataList] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [healthEffects, setHealthEffects] = useState<{ [key: string]: any }>({});
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+
+  const nutritionixAppId = "c0441bfe"; // Replace with your Nutritionix App ID
+  const nutritionixAppKey = "b477432b23b0dc73554fdb61c3f50296"; // Replace with your Nutritionix API Key
 
   const fetchFoodByBarcode = async () => {
     setLoading(true);
@@ -57,6 +61,49 @@ const FoodSearch: React.FC = () => {
     }
   };
 
+  const fetchHealthEffects = async (ingredient: string) => {
+    const url = `https://trackapi.nutritionix.com/v2/natural/nutrients`;
+
+    try {
+      const response = await axios.post(
+        url,
+        { query: ingredient },
+        {
+          headers: {
+            "x-app-id": nutritionixAppId,
+            "x-app-key": nutritionixAppKey,
+          },
+        }
+      );
+      if (response.data.foods && response.data.foods.length > 0) {
+        return response.data.foods[0];
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching health effects:", error);
+      return null;
+    }
+  };
+
+  const handleProductSelect = async (product: any) => {
+    setSelectedProduct(product);
+    setLoading(true);
+    setError("");
+
+    if (product.ingredients) {
+      const effects: { [key: string]: any } = {};
+      for (const ingredient of product.ingredients) {
+        const effect = await fetchHealthEffects(ingredient.text);
+        if (effect) {
+          effects[ingredient.text] = effect;
+        }
+      }
+      setHealthEffects(effects);
+    }
+
+    setLoading(false);
+  };
+
   return (
     <div className="w-[98%] mx-auto mt-6 px-4">
       <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6">
@@ -78,7 +125,7 @@ const FoodSearch: React.FC = () => {
             ) : (
               <ProductList
                 foodDataList={foodDataList}
-                setSelectedProduct={setSelectedProduct}
+                setSelectedProduct={handleProductSelect}
               />
             )}
           </div>
@@ -127,6 +174,32 @@ const FoodSearch: React.FC = () => {
           {selectedProduct && (
             <div className="bg-gray-800 p-4 rounded-lg">
               <DetailedInfo selectedProduct={selectedProduct} />
+            </div>
+          )}
+
+          {selectedProduct && (
+            <div className="bg-gray-800 p-4 rounded-lg mt-4">
+              <h2 className="text-lg font-semibold text-white mb-4">Ingredient Health Effects</h2>
+              {selectedProduct.ingredients ? (
+                <ul className="space-y-2">
+                  {selectedProduct.ingredients.map((ingredient: any, index: number) => (
+                    <li key={index} className="text-white">
+                      <strong>{ingredient.text}:</strong>{" "}
+                      {healthEffects[ingredient.text] ? (
+                        <span>
+                          Calories: {healthEffects[ingredient.text].nf_calories} kcal,{" "}
+                          Protein: {healthEffects[ingredient.text].nf_protein} g,{" "}
+                          Fat: {healthEffects[ingredient.text].nf_total_fat} g
+                        </span>
+                      ) : (
+                        "No health effects data available."
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-white">No ingredients listed.</p>
+              )}
             </div>
           )}
         </div>
