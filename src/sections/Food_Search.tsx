@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import SearchInput from "./SearchInput";
 import ProductList from "./ProductList";
@@ -7,6 +7,14 @@ import ProductDetails from "./ProductDetails";
 import DetailedInfo from "./DetailedInfo";
 import NutritionalChart from "./NutritionalChart";
 import SkeletonLoader from "./SkeletonLoader";
+import { healthRules } from "@/lib/healthRules";
+import { 
+  findSubstitutes,
+  getProductCategory,
+  hasAllergens,
+  isWidelyAvailable,
+  isNutritionallyBetter
+} from "@/lib/substituteFinder";
 
 const FoodSearch: React.FC = () => {
   const [barcode, setBarcode] = useState<string>("");
@@ -15,6 +23,36 @@ const FoodSearch: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [substitutes, setSubstitutes] = useState<any[]>([]);
+  const [substituteLoading, setSubstituteLoading] = useState(false);
+  const [healthData, setHealthData] = useState<{ 
+    healthIssues: string[], 
+    allergies: string[] 
+  }>({ healthIssues: [], allergies: [] });
+
+  useEffect(() => {
+    const userHealthData = JSON.parse(localStorage.getItem("userHealthData") || "{}");
+    setHealthData({
+      healthIssues: userHealthData.healthIssues || [],
+      allergies: userHealthData.allergies || []
+    });
+  }, [selectedProduct]);
+
+  const handleFindSubstitutes = async (originalProduct: any) => {
+    setSubstituteLoading(true);
+    try {
+      const substitutes = await findSubstitutes(originalProduct, healthData);
+      setSubstitutes(substitutes);
+    } catch (error) {
+      console.error("Substitute search failed:", error);
+    }
+    setSubstituteLoading(false);
+  };
+
+  const handleProductSelect = (product: any) => {
+    setSelectedProduct(product);
+    handleFindSubstitutes(product);
+  };
 
   const fetchFoodByBarcode = async () => {
     setLoading(true);
@@ -25,7 +63,9 @@ const FoodSearch: React.FC = () => {
         `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`
       );
       if (response.data.status === 1 && response.data.product) {
-        setSelectedProduct(response.data.product);
+        const product = response.data.product;
+        setSelectedProduct(product);
+        handleFindSubstitutes(product);
       } else {
         setError("Product not found.");
       }
@@ -131,6 +171,48 @@ const FoodSearch: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Substitute products section */}
+      {substitutes.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold text-white mb-4">Healthier Alternatives</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {substitutes.map((substitute) => (
+              <div key={substitute.code} className="bg-gray-800 p-4 rounded-lg">
+                <img
+                  src={substitute.image_url}
+                  alt={substitute.product_name}
+                  className="w-full h-48 object-contain mb-4"
+                />
+                <h3 className="text-lg font-semibold text-white">
+                  {substitute.product_name || "Unnamed Product"}
+                </h3>
+                <div className="flex flex-wrap gap-2 my-2">
+                  <span className="px-2 py-1 bg-blue-600 rounded-full text-xs">
+                    {substitute.nutriscore_grade?.toUpperCase() || 'N/A'} NutriScore
+                  </span>
+                  <span className="px-2 py-1 bg-green-600 rounded-full text-xs">
+                    {substitute.ecoscore_grade?.toUpperCase() || 'N/A'} EcoScore
+                  </span>
+                </div>
+                <button
+                  onClick={() => handleProductSelect(substitute)}
+                  className="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg"
+                >
+                  View Details
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {substituteLoading && (
+        <div className="text-center mt-8">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-purple-500 border-t-transparent"></div>
+          <p className="text-purple-500 mt-2">Finding healthier alternatives...</p>
+        </div>
+      )}
 
       {error && <p className="text-red-500 text-center mt-4">{error}</p>}
     </div>

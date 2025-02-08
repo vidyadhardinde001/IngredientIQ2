@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import jwt from "jsonwebtoken";
 import FoodSearch from "@/sections/Food_Search";
 import Hero from "@/sections/Hero";
 import IngredientScanPage from "@/sections/barcode";
@@ -15,27 +16,57 @@ export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const checkAuth = () => {
-      const token = localStorage.getItem("token");
-      setIsAuthenticated(!!token);
-    };
+    // In your Home component's checkAuth function
+const checkAuth = () => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      const decoded = jwt.decode(token);
+      console.log("Decoded token:", decoded); // Add this
+      
+      const healthData = {
+        healthIssues: (decoded as any)?.healthData?.healthIssues || [],
+        allergies: (decoded as any)?.healthData?.allergies || []
+      };
+      
+      console.log("Storing health data:", healthData); // Add this
+      localStorage.setItem("userHealthData", JSON.stringify(healthData));
+    } catch (error) {
+      console.error("Token decoding error:", error);
+    }
+  }
+  setIsAuthenticated(!!token);
+};
 
-    checkAuth(); // Run immediately
-    window.addEventListener("storage", checkAuth); // Listen for token changes
-
-    return () => window.removeEventListener("storage", checkAuth); // Cleanup listener
+    checkAuth(); // Immediate check
+    window.addEventListener("storage", checkAuth);
+    
+    return () => window.removeEventListener("storage", checkAuth);
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("token"); // ✅ Remove token
-    setIsAuthenticated(false); // Update local state
-    router.push("/login"); // Redirect to login page
+    localStorage.removeItem("token");
+    localStorage.removeItem("userHealthData"); // Clear health data too
+    setIsAuthenticated(false);
+    router.push("/login");
   };
 
   return (
     <>
       <Login />
       <FoodSearch />
+      <nav className="flex justify-end p-4">
+        {isAuthenticated ? (
+          <button onClick={handleLogout} className="text-red-600">
+            Logout
+          </button>
+        ) : (
+          <>
+            <Link href="/login" className="mr-4 text-blue-600">Login</Link>
+            <Link href="/register" className="text-blue-600">Register</Link>
+          </>
+        )}
+      </nav>
     </>
   );
 }
