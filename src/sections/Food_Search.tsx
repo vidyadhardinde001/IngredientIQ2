@@ -7,14 +7,9 @@ import ProductDetails from "./ProductDetails";
 import DetailedInfo from "./DetailedInfo";
 import NutritionalChart from "./NutritionalChart";
 import SkeletonLoader from "./SkeletonLoader";
-import { healthRules } from "@/lib/healthRules";
-import HealthInfo from "./HealthInfo"; // Import the new component
+import HealthInfo from "./HealthInfo";
 import { 
-  findSubstitutes,
-  getProductCategory,
-  hasAllergens,
-  isWidelyAvailable,
-  isNutritionallyBetter
+  findSubstitutes
 } from "@/lib/substituteFinder";
 
 const FoodSearch: React.FC = () => {
@@ -22,7 +17,6 @@ const FoodSearch: React.FC = () => {
   const [productName, setProductName] = useState<string>("");
   const [foodDataList, setFoodDataList] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [healthEffects, setHealthEffects] = useState<{ [key: string]: any }>({});
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [substitutes, setSubstitutes] = useState<any[]>([]);
@@ -54,21 +48,6 @@ const FoodSearch: React.FC = () => {
 
   const handleProductSelect = async (product: any) => {
     setSelectedProduct(product);
-    setLoading(true);
-    setError("");
-
-    if (product?.ingredients) {
-      const effects: { [key: string]: any } = {};
-      for (const ingredient of product.ingredients) {
-        if (!ingredient?.text) continue;
-        const effect = await fetchHealthEffects(ingredient.text);
-        if (effect) {
-          effects[ingredient.text] = effect;
-        }
-      }
-      setHealthEffects(effects);
-    }
-
     setLoading(false);
     handleFindSubstitutes(product);
   };
@@ -118,30 +97,6 @@ const FoodSearch: React.FC = () => {
     }
   };
 
-  const fetchHealthEffects = async (ingredient: string) => {
-    const url = `https://trackapi.nutritionix.com/v2/natural/nutrients`;
-
-    try {
-      const response = await axios.post(
-        url,
-        { query: ingredient },
-        {
-          headers: {
-            "x-app-id": process.env.NEXT_PUBLIC_NUTRITIONIX_APP_ID,
-            "x-app-key": process.env.NEXT_PUBLIC_NUTRITIONIX_APP_KEY,
-          },
-        }
-      );
-      if (response.data.foods && response.data.foods.length > 0) {
-        return response.data.foods[0];
-      }
-      return null;
-    } catch (error) {
-      console.error("Error fetching health effects:", error);
-      return null;
-    }
-  };
-
   return (
     <div className="w-[98%] mx-auto mt-6 px-4">
       <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6">
@@ -178,9 +133,7 @@ const FoodSearch: React.FC = () => {
             )}
           </div>
 
-          {selectedProduct && (
-            <DetailedInfo selectedProduct={selectedProduct} />
-          )}
+          {selectedProduct && <DetailedInfo selectedProduct={selectedProduct} />}
           {selectedProduct && <HealthInfo selectedProduct={selectedProduct} />}
 
           {selectedProduct && (

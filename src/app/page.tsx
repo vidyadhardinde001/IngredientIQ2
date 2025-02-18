@@ -56,19 +56,6 @@ const checkAuth = () => {
     <>
       <Login />
       <FoodSearch />
-      <Test />
-      <nav className="flex justify-end p-4">
-        {isAuthenticated ? (
-          <button onClick={handleLogout} className="text-red-600">
-            Logout
-          </button>
-        ) : (
-          <>
-            <Link href="/login" className="mr-4 text-blue-600">Login</Link>
-            <Link href="/register" className="text-blue-600">Register</Link>
-          </>
-        )}
-      </nav>
     </>
   );
 }
