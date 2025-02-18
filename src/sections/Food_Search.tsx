@@ -8,6 +8,7 @@ import DetailedInfo from "./DetailedInfo";
 import NutritionalChart from "./NutritionalChart";
 import SkeletonLoader from "./SkeletonLoader";
 import { healthRules } from "@/lib/healthRules";
+import HealthInfo from "./HealthInfo"; // Import the new component
 import { 
   findSubstitutes,
   getProductCategory,
@@ -37,9 +38,10 @@ const FoodSearch: React.FC = () => {
       healthIssues: userHealthData.healthIssues || [],
       allergies: userHealthData.allergies || []
     });
-  }, [selectedProduct]);
+  }, []);
 
   const handleFindSubstitutes = async (originalProduct: any) => {
+    if (!originalProduct) return;
     setSubstituteLoading(true);
     try {
       const substitutes = await findSubstitutes(originalProduct, healthData);
@@ -50,26 +52,39 @@ const FoodSearch: React.FC = () => {
     setSubstituteLoading(false);
   };
 
-  const handleProductSelect = (product: any) => {
+  const handleProductSelect = async (product: any) => {
     setSelectedProduct(product);
+    setLoading(true);
+    setError("");
+
+    if (product?.ingredients) {
+      const effects: { [key: string]: any } = {};
+      for (const ingredient of product.ingredients) {
+        if (!ingredient?.text) continue;
+        const effect = await fetchHealthEffects(ingredient.text);
+        if (effect) {
+          effects[ingredient.text] = effect;
+        }
+      }
+      setHealthEffects(effects);
+    }
+
+    setLoading(false);
     handleFindSubstitutes(product);
   };
 
-  const nutritionixAppId = "c0441bfe"; // Replace with your Nutritionix App ID
-  const nutritionixAppKey = "b477432b23b0dc73554fdb61c3f50296"; // Replace with your Nutritionix API Key
-
   const fetchFoodByBarcode = async () => {
+    if (!barcode) return;
     setLoading(true);
     setSelectedProduct(null);
     setError("");
+
     try {
       const response = await axios.get(
         `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`
       );
       if (response.data.status === 1 && response.data.product) {
-        const product = response.data.product;
-        setSelectedProduct(product);
-        handleFindSubstitutes(product);
+        handleProductSelect(response.data.product);
       } else {
         setError("Product not found.");
       }
@@ -81,10 +96,12 @@ const FoodSearch: React.FC = () => {
   };
 
   const fetchFoodByName = async () => {
+    if (!productName) return;
     setLoading(true);
     setFoodDataList([]);
     setSelectedProduct(null);
     setError("");
+
     try {
       const response = await axios.get(
         `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${productName}&search_simple=1&json=1`
@@ -110,8 +127,8 @@ const FoodSearch: React.FC = () => {
         { query: ingredient },
         {
           headers: {
-            "x-app-id": nutritionixAppId,
-            "x-app-key": nutritionixAppKey,
+            "x-app-id": process.env.NEXT_PUBLIC_NUTRITIONIX_APP_ID,
+            "x-app-key": process.env.NEXT_PUBLIC_NUTRITIONIX_APP_KEY,
           },
         }
       );
@@ -123,25 +140,6 @@ const FoodSearch: React.FC = () => {
       console.error("Error fetching health effects:", error);
       return null;
     }
-  };
-
-  const handleProductSelect = async (product: any) => {
-    setSelectedProduct(product);
-    setLoading(true);
-    setError("");
-
-    if (product.ingredients) {
-      const effects: { [key: string]: any } = {};
-      for (const ingredient of product.ingredients) {
-        const effect = await fetchHealthEffects(ingredient.text);
-        if (effect) {
-          effects[ingredient.text] = effect;
-        }
-      }
-      setHealthEffects(effects);
-    }
-
-    setLoading(false);
   };
 
   return (
@@ -181,111 +179,27 @@ const FoodSearch: React.FC = () => {
           </div>
 
           {selectedProduct && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gray-800 p-6 rounded-xl shadow-lg w-full col-span-2 flex flex-col items-center">
-                <h2 className="text-lg font-semibold text-white mb-4">
-                  Nutritional Chart
-                </h2>
-                <NutritionalChart
-                  labels={[
-                    "Energy (kcal)",
-                    "Carbs (g)",
-                    "Fat (g)",
-                    "Sugars (g)",
-                    "Salt (g)",
-                    "Fibre (g)",
-                    "Proteins (g)",
-                  ]}
-                  values={[
-                    selectedProduct.nutriments?.energy_100g / 100 || 0,
-                    selectedProduct.nutriments?.carbohydrates_100g || 0,
-                    selectedProduct.nutriments?.fat_100g || 0,
-                    selectedProduct.nutriments?.sugars_100g || 0,
-                    selectedProduct.nutriments?.salt_100g || 0,
-                    selectedProduct.nutriments?.fibre_100g || 0,
-                    selectedProduct.nutriments?.proteins_100g || 0,
-                  ]}
-                  label="Nutrition Per 100g"
-                />
-              </div>
-            </div>
+            <DetailedInfo selectedProduct={selectedProduct} />
           )}
+          {selectedProduct && <HealthInfo selectedProduct={selectedProduct} />}
 
           {selectedProduct && (
-            <div className="bg-gray-800 p-4 rounded-lg">
-              <DetailedInfo selectedProduct={selectedProduct} />
-            </div>
-          )}
-
-          {selectedProduct && (
-            <div className="bg-gray-800 p-4 rounded-lg mt-4">
-              <h2 className="text-lg font-semibold text-white mb-4">Ingredient Health Effects</h2>
-              {selectedProduct.ingredients ? (
-                <ul className="space-y-2">
-                  {selectedProduct.ingredients.map((ingredient: any, index: number) => (
-                    <li key={index} className="text-white">
-                      <strong>{ingredient.text}:</strong>{" "}
-                      {healthEffects[ingredient.text] ? (
-                        <span>
-                          Calories: {healthEffects[ingredient.text].nf_calories} kcal,{" "}
-                          Protein: {healthEffects[ingredient.text].nf_protein} g,{" "}
-                          Fat: {healthEffects[ingredient.text].nf_total_fat} g
-                        </span>
-                      ) : (
-                        "No health effects data available."
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-white">No ingredients listed.</p>
-              )}
-            </div>
+            <NutritionalChart
+              labels={["Energy", "Carbs", "Fat", "Sugars", "Salt", "Fibre", "Proteins"]}
+              values={[
+                selectedProduct.nutriments?.energy_100g / 100 || 0,
+                selectedProduct.nutriments?.carbohydrates_100g || 0,
+                selectedProduct.nutriments?.fat_100g || 0,
+                selectedProduct.nutriments?.sugars_100g || 0,
+                selectedProduct.nutriments?.salt_100g || 0,
+                selectedProduct.nutriments?.fibre_100g || 0,
+                selectedProduct.nutriments?.proteins_100g || 0,
+              ]}
+              label="Nutrition Per 100g"
+            />
           )}
         </div>
       </div>
-
-      {/* Substitute products section */}
-      {substitutes.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold text-white mb-4">Healthier Alternatives</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {substitutes.map((substitute) => (
-              <div key={substitute.code} className="bg-gray-800 p-4 rounded-lg">
-                <img
-                  src={substitute.image_url}
-                  alt={substitute.product_name}
-                  className="w-full h-48 object-contain mb-4"
-                />
-                <h3 className="text-lg font-semibold text-white">
-                  {substitute.product_name || "Unnamed Product"}
-                </h3>
-                <div className="flex flex-wrap gap-2 my-2">
-                  <span className="px-2 py-1 bg-blue-600 rounded-full text-xs">
-                    {substitute.nutriscore_grade?.toUpperCase() || 'N/A'} NutriScore
-                  </span>
-                  <span className="px-2 py-1 bg-green-600 rounded-full text-xs">
-                    {substitute.ecoscore_grade?.toUpperCase() || 'N/A'} EcoScore
-                  </span>
-                </div>
-                <button
-                  onClick={() => handleProductSelect(substitute)}
-                  className="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg"
-                >
-                  View Details
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {substituteLoading && (
-        <div className="text-center mt-8">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-purple-500 border-t-transparent"></div>
-          <p className="text-purple-500 mt-2">Finding healthier alternatives...</p>
-        </div>
-      )}
 
       {error && <p className="text-red-500 text-center mt-4">{error}</p>}
     </div>

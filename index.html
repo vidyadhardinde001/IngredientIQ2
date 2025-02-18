@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Food Product Description</title>
+</head>
+<body>
+  <h1>Food Product Description Generator</h1>
+  <input type="text" id="productInput" placeholder="Enter food product">
+  <button onclick="getDescription()">Get Description</button>
+  <div id="description"></div>
+
+  <script>
+    async function getDescription() {
+      const product = document.getElementById('productInput').value;
+      const response = await fetch('/generate-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product })
+      });
+      const data = await response.json();
+      document.getElementById('description').innerText = data.description;
+    }
+  </script>
+</body>
+</html>

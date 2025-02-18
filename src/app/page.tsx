@@ -8,6 +8,7 @@ import IngredientScanPage from "@/sections/barcode";
 import AI from "@/sections/AI";
 import Main from "@/sections/Main";
 import Login from "@/sections/Login";
+import Test from "@/sections/OpenAITest";
 
 import Link from "next/link";
 
@@ -55,6 +56,7 @@ const checkAuth = () => {
     <>
       <Login />
       <FoodSearch />
+      <Test />
       <nav className="flex justify-end p-4">
         {isAuthenticated ? (
           <button onClick={handleLogout} className="text-red-600">
