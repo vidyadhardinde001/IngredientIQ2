@@ -21,39 +21,53 @@ const HealthInfo: React.FC = () => {
         return;
       }
 
-      const apiKey = process.env.OPENAI_API_KEY;
-      if (!apiKey) {
-        throw new Error("API key is missing! Add it to .env.local");
+      const response = await fetch(`/api/product-info?productName=${encodeURIComponent(productName)}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch product info");
       }
 
-      const prompt = `Write a concise 2-line description of the product '${productName}', including its history, the company that manufactures it, and its main purpose. Then, provide a short, bullet-point summary of any known health concerns associated with this product.`;
-
-      const requestBody = {
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 150,
-      };
-
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch response");
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
       }
 
-      const data = await res.json();
-      const responseText = data.choices[0]?.message?.content || "No response received";
+      setDescription(data.description);
+      setHealthConcerns(data.healthConcerns);
 
-      // Split description & health concerns (assuming OpenAI returns them in separate paragraphs)
-      const [desc, health] = responseText.split("\n\n");
-      setDescription(desc || "No description available.");
-      setHealthConcerns(health || "No health concerns mentioned.");
+      // const apiKey = process.env.OPENAI_API_KEY;
+      // if (!apiKey) {
+      //   throw new Error("API key is missing! Add it to .env.local");
+      // }
+      // console.log(apiKey);
+
+      // const prompt = `Write a concise 2-line description of the product '${productName}', including its history, the company that manufactures it, and its main purpose. Then, provide a short, bullet-point summary of any known health concerns associated with this product.`;
+
+      // const requestBody = {
+      //   model: "gpt-3.5-turbo",
+      //   messages: [{ role: "user", content: prompt }],
+      //   max_tokens: 150,
+      // };
+
+      // const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      //   method: "POST",
+      //   headers: {
+      //     "Authorization": `Bearer ${apiKey}`,
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify(requestBody),
+      // });
+
+      // if (!res.ok) {
+      //   throw new Error("Failed to fetch response");
+      // }
+
+      // const data = await res.json();
+      // const responseText = data.choices[0]?.message?.content || "No response received";
+
+      // // Split description & health concerns (assuming OpenAI returns them in separate paragraphs)
+      // const [desc, health] = responseText.split("\n\n");
+      // setDescription(desc || "No description available.");
+      // setHealthConcerns(health || "No health concerns mentioned.");
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {
