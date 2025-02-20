@@ -1,6 +1,9 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import Profile from "@/app/profile/page";
+import { FaUserCircle } from "react-icons/fa";
 
 const Navbar = () => {
   const router = useRouter();
@@ -21,7 +24,10 @@ const Navbar = () => {
   return (
     <nav className="flex justify-between items-center p-4 w-full bg-white shadow-md">
       {/* Logo or Branding */}
-      <div className="text-2xl font-bold text-gray-700 cursor-pointer" onClick={() => router.push("/")}>
+      <div
+        className="text-2xl font-bold text-gray-700 cursor-pointer"
+        onClick={() => router.push("/")}
+      >
         IngredientIQ
       </div>
 
@@ -35,29 +41,26 @@ const Navbar = () => {
             Logout
           </button>
         ) : (
-            <div className="flex space-x-4">
-              <button
-    onClick={() => router.push("/profile")}
-    className="px-6 py-2 text-white bg-gradient-to-r from-blue-500 to-purple-600 rounded-full shadow-md 
+          <div className="flex space-x-4 items-center">
+            <FaUserCircle
+      className="w-8 h-8 text-blue-500 hover:text-purple-600 cursor-pointer transition-transform duration-300 ease-in-out transform hover:scale-110"
+      onClick={() => router.push("/profile")}
+    />
+            <button
+              onClick={() => router.push("/login")}
+              className="px-6 py-2 text-white bg-gradient-to-r from-blue-500 to-purple-600 rounded-full shadow-md 
                hover:from-purple-600 hover:to-blue-500 hover:scale-105 transition-transform duration-300 ease-in-out"
-  >
-    Profile
-  </button>
-  <button
-    onClick={() => router.push("/login")}
-    className="px-6 py-2 text-white bg-gradient-to-r from-blue-500 to-purple-600 rounded-full shadow-md 
+            >
+              Login
+            </button>
+            <button
+              onClick={() => router.push("/register")}
+              className="px-6 py-2 text-white bg-gradient-to-r from-blue-500 to-purple-600 rounded-full shadow-md 
                hover:from-purple-600 hover:to-blue-500 hover:scale-105 transition-transform duration-300 ease-in-out"
-  >
-    Login
-  </button>
-  <button
-    onClick={() => router.push("/register")}
-    className="px-6 py-2 text-white bg-gradient-to-r from-blue-500 to-purple-600 rounded-full shadow-md 
-               hover:from-purple-600 hover:to-blue-500 hover:scale-105 transition-transform duration-300 ease-in-out"
-  >
-    Register
-  </button>
-</div>
+            >
+              Register
+            </button>
+          </div>
         )}
       </div>
     </nav>
