@@ -104,12 +104,16 @@ const SearchInput: React.FC<Props> = ({
               width={300}
               height={200}
               onUpdate={(err, result) => {
-                if (result?.text) {
-                  setBarcode(result.text);
-                  setScannerActive(false);
+                if (result) {
+                  const barcodeText = result.getText(); // Use getText() to get the barcode value
+                  if (barcodeText) {
+                    setBarcode(barcodeText);
+                    setScannerActive(false);
+                  }
                 }
               }}
             />
+
             {/* Upload Image */}
             <label className="w-full bg-gray-600 text-white py-2 text-center rounded-lg hover:bg-gray-500 transition cursor-pointer">
               Upload Image

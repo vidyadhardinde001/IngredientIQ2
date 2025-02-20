@@ -7,13 +7,9 @@ import ProductDetails from "./ProductDetails";
 import DetailedInfo from "./DetailedInfo";
 import NutritionalChart from "./NutritionalChart";
 import SkeletonLoader from "./SkeletonLoader";
-import { healthRules } from "@/lib/healthRules";
+import HealthInfo from "./HealthInfo";
 import { 
-  findSubstitutes,
-  getProductCategory,
-  hasAllergens,
-  isWidelyAvailable,
-  isNutritionallyBetter
+  findSubstitutes
 } from "@/lib/substituteFinder";
 
 const FoodSearch: React.FC = () => {
@@ -30,6 +26,8 @@ const FoodSearch: React.FC = () => {
     allergies: string[] 
   }>({ healthIssues: [], allergies: [] });
 
+  const [ingredientsAnalysis, setIngredientsAnalysis] = useState<any>(null);
+
   useEffect(() => {
     const userHealthData = JSON.parse(localStorage.getItem("userHealthData") || "{}");
     setHealthData({
@@ -39,6 +37,7 @@ const FoodSearch: React.FC = () => {
   }, [selectedProduct]);
 
   const handleFindSubstitutes = async (originalProduct: any) => {
+    // if (!originalProduct) return;
     setSubstituteLoading(true);
     try {
       const substitutes = await findSubstitutes(originalProduct, healthData);
@@ -49,15 +48,18 @@ const FoodSearch: React.FC = () => {
     setSubstituteLoading(false);
   };
 
-  const handleProductSelect = (product: any) => {
+  const handleProductSelect = async (product: any) => {
     setSelectedProduct(product);
+    setLoading(false);
     handleFindSubstitutes(product);
   };
 
   const fetchFoodByBarcode = async () => {
+    if (!barcode) return;
     setLoading(true);
     setSelectedProduct(null);
     setError("");
+
     try {
       const response = await axios.get(
         `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`
@@ -77,10 +79,12 @@ const FoodSearch: React.FC = () => {
   };
 
   const fetchFoodByName = async () => {
+    if (!productName) return;
     setLoading(true);
     setFoodDataList([]);
     setSelectedProduct(null);
     setError("");
+
     try {
       const response = await axios.get(
         `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${productName}&search_simple=1&json=1`
@@ -118,7 +122,7 @@ const FoodSearch: React.FC = () => {
             ) : (
               <ProductList
                 foodDataList={foodDataList}
-                setSelectedProduct={setSelectedProduct}
+                setSelectedProduct={handleProductSelect}
               />
             )}
           </div>
@@ -133,45 +137,26 @@ const FoodSearch: React.FC = () => {
             )}
           </div>
 
-          {selectedProduct && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gray-800 p-6 rounded-xl shadow-lg w-full col-span-2 flex flex-col items-center">
-                <h2 className="text-lg font-semibold text-white mb-4">
-                  Nutritional Chart
-                </h2>
-                <NutritionalChart
-                  labels={[
-                    "Energy (kcal)",
-                    "Carbs (g)",
-                    "Fat (g)",
-                    "Sugars (g)",
-                    "Salt (g)",
-                    "Fibre (g)",
-                    "Proteins (g)",
-                  ]}
-                  values={[
-                    selectedProduct.nutriments?.energy_100g / 100 || 0,
-                    selectedProduct.nutriments?.carbohydrates_100g || 0,
-                    selectedProduct.nutriments?.fat_100g || 0,
-                    selectedProduct.nutriments?.sugars_100g || 0,
-                    selectedProduct.nutriments?.salt_100g || 0,
-                    selectedProduct.nutriments?.fibre_100g || 0,
-                    selectedProduct.nutriments?.proteins_100g || 0,
-                  ]}
-                  label="Nutrition Per 100g"
-                />
-              </div>
-            </div>
-          )}
+          {selectedProduct && <DetailedInfo selectedProduct={selectedProduct} />}
+          {selectedProduct && <HealthInfo selectedProduct={selectedProduct} />}
 
           {selectedProduct && (
-            <div className="bg-gray-800 p-4 rounded-lg">
-              <DetailedInfo selectedProduct={selectedProduct} />
-            </div>
+            <NutritionalChart
+              labels={["Energy", "Carbs", "Fat", "Sugars", "Salt", "Fibre", "Proteins"]}
+              values={[
+                selectedProduct.nutriments?.energy_100g / 100 || 0,
+                selectedProduct.nutriments?.carbohydrates_100g || 0,
+                selectedProduct.nutriments?.fat_100g || 0,
+                selectedProduct.nutriments?.sugars_100g || 0,
+                selectedProduct.nutriments?.salt_100g || 0,
+                selectedProduct.nutriments?.fibre_100g || 0,
+                selectedProduct.nutriments?.proteins_100g || 0,
+              ]}
+              label="Nutrition Per 100g"
+            />
           )}
         </div>
       </div>
-
       {/* Substitute products section */}
       {substitutes.length > 0 && (
         <div className="mt-8">
