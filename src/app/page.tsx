@@ -8,7 +8,6 @@ import IngredientScanPage from "@/sections/barcode";
 import AI from "@/sections/AI";
 import Main from "@/sections/Main";
 import Login from "@/sections/Login";
-import Test from "@/sections/OpenAITest";
 
 import Link from "next/link";
 
