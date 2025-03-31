@@ -37,7 +37,7 @@
     "jsqr": "^1.4.0",
     "lucide-react": "^0.475.0",
     "mongoose": "^8.9.6",
-    "next": "^14.2.23",
+    "next": "^14.2.26",
     "next-auth": "^4.24.11",
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.15",
