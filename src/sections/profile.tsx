@@ -81,7 +81,7 @@ const Profile = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
+
     if (name.startsWith("macronutrients.")) {
       const field = name.split(".")[1];
       setUserData(prev => ({
@@ -104,7 +104,7 @@ const Profile = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
       const token = localStorage.getItem("authToken");
       const response = await fetch("/api/user/update-profile", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
@@ -130,14 +130,14 @@ const Profile = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
 
   const generateRecommendations = async () => {
     setRecommendations(prev => ({ ...prev, isLoading: true }));
-  
+
     try {
       const apiKey = process.env.OPENAI_API_KEY;
       if (!apiKey) {
         console.error("Missing OpenAI API Key in environment variables.");
         return;
       }
-  
+
       const prompt = `
       Based on the following user profile, provide specific food recommendations:
   
@@ -165,7 +165,7 @@ const Profile = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
   
       Return the response as a JSON object with these keys: foodsToEat, foodsToAvoid, rationale.
       `;
-  
+
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -179,14 +179,14 @@ const Profile = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
           max_tokens: 300,
         }),
       });
-  
+
       if (response.ok) {
         const data = await response.json();
         console.log("API Response:", data);
-  
+
         const messageContent = data.choices[0]?.message?.content || "{}";
         const result = JSON.parse(messageContent);
-  
+
         setRecommendations({
           foodsToEat: result.foodsToEat || [],
           foodsToAvoid: result.foodsToAvoid || [],
@@ -202,8 +202,8 @@ const Profile = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
       setRecommendations(prev => ({ ...prev, isLoading: false }));
     }
   };
-  
-  
+
+
 
   return (
     <AnimatePresence>
@@ -230,14 +230,14 @@ const Profile = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
           <div className="sticky top-0 bg-white z-10 p-6 shadow-sm">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-800">My Profile</h2>
-              <button 
-                onClick={onClose} 
+              <button
+                onClick={onClose}
                 className="text-gray-500 hover:text-gray-700 transition-colors"
               >
                 <FiX size={24} />
               </button>
             </div>
-            
+
             <div className="flex border-b border-gray-200">
               <button
                 className={`py-2 px-4 font-medium ${activeTab === "personal" ? "text-green-600 border-b-2 border-green-600" : "text-gray-500"}`}
@@ -301,7 +301,7 @@ const Profile = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
                     <FiDroplet className="text-gray-400" />
                     <h3 className="text-lg font-semibold text-gray-700">Nutrition Preferences</h3>
                   </div>
-                  
+
                   <div className="space-y-4 pl-8">
                     {/* Nutrition Preferences Fields (same as before) */}
                     {/* ... */}
@@ -380,9 +380,8 @@ const Profile = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`w-full py-3 px-4 flex justify-center items-center rounded-lg font-bold text-white ${
-                    isLoading ? "bg-green-400" : "bg-green-600 hover:bg-green-700"
-                  } transition-colors`}
+                  className={`w-full py-3 px-4 flex justify-center items-center rounded-lg font-bold text-white ${isLoading ? "bg-green-400" : "bg-green-600 hover:bg-green-700"
+                    } transition-colors`}
                 >
                   {isLoading ? (
                     <>
@@ -399,8 +398,8 @@ const Profile = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
                     </>
                   )}
                 </button>
-                
-                
+
+
                 {saveSuccess && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -411,19 +410,19 @@ const Profile = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
                   </motion.div>
                 )}
               </div>
-              <button 
-  onClick={generateRecommendations} 
-  className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
->
-  {recommendations.isLoading ? "Generating..." : "Generate Recommendations"}
-</button>
+              <button
+                onClick={generateRecommendations}
+                className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+              >
+                {recommendations.isLoading ? "Generating..." : "Generate Recommendations"}
+              </button>
 
             </form>
           )}
         </motion.div>
       )}
     </AnimatePresence>
-    
+
   );
 };
 

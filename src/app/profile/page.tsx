@@ -24,7 +24,7 @@ const Profile = () => {
     sleepHours: "",
     waterIntake: "",
     smokingStatus: "",
-    alcoholConsumption: "",
+    alcoholConsumption: "", 
     medications: "",
     supplements: "",
     healthConditions: "",
@@ -59,13 +59,13 @@ const Profile = () => {
     }
   }, []);
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setUserData({ ...userData, [e.target.name]: e.target.value });
   };
 
-  const generateRecommendations = async (profileData) => {
+  const generateRecommendations = async (profileData: typeof userData) => {
     // Validate required fields
-    if (!profileData?.age || !profileData?.weight || !profileData?.height) {
+    if (!profileData.age || !profileData.weight || !profileData.height) {
       setError("Please fill in age, weight, and height to get recommendations");
       return;
     }
