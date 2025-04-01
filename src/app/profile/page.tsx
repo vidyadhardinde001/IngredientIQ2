@@ -1,14 +1,43 @@
 "use client";
 import { useState, useEffect } from "react";
 import {
-  FaUser, FaWeight, FaHeartbeat, FaUtensils, FaAllergies, 
-  FaCheckCircle, FaExclamationTriangle, FaEdit, FaSave, 
-  FaRunning, FaPills, FaWater, FaSmokingBan, FaWineGlassAlt, 
+  FaUser, FaWeight, FaHeartbeat, FaUtensils, FaAllergies,
+  FaCheckCircle, FaExclamationTriangle, FaEdit, FaSave,
+  FaRunning, FaPills, FaWater, FaSmokingBan, FaWineGlassAlt,
   FaBed, FaDna, FaSpinner
 } from "react-icons/fa";
 
+interface UserData {
+  username: string;
+  age: string;
+  gender: string;
+  weight: string;
+  height: string;
+  bloodType: string;
+  bloodPressure: string;
+  cholesterol: string;
+  glucoseLevel: string;
+  bmi: string;
+  activityLevel: string;
+  exerciseFrequency: string;
+  sleepHours: string;
+  waterIntake: string;
+  smokingStatus: string;
+  alcoholConsumption: string;
+  medications: string;
+  supplements: string;
+  healthConditions: string;
+  familyHistory: string;
+  dietaryPreferences: string;
+  allergies: string;
+  foodIntolerances: string;
+  knownDeficiencies: string;
+  foodSuggestions: string[];
+  foodWarnings: string[];
+}
+
 const Profile = () => {
-  const [userData, setUserData] = useState({
+  const [userData, setUserData] = useState<UserData>({
     username: "",
     age: "",
     gender: "",
@@ -24,7 +53,7 @@ const Profile = () => {
     sleepHours: "",
     waterIntake: "",
     smokingStatus: "",
-    alcoholConsumption: "", 
+    alcoholConsumption: "",
     medications: "",
     supplements: "",
     healthConditions: "",
@@ -39,20 +68,29 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [lastProfileHash, setLastProfileHash] = useState("");
+
+  const getProfileHash = (profile: UserData) => {
+    return JSON.stringify({
+      age: profile.age,
+      weight: profile.weight,
+      height: profile.height,
+      healthConditions: profile.healthConditions,
+      medications: profile.medications,
+      allergies: profile.allergies,
+      dietaryPreferences: profile.dietaryPreferences,
+      knownDeficiencies: profile.knownDeficiencies
+    });
+  };
 
   useEffect(() => {
     const savedProfile = localStorage.getItem("userProfile");
     if (savedProfile) {
       try {
-        const parsed = JSON.parse(savedProfile);
+        const parsed = JSON.parse(savedProfile) as UserData;
         setUserData(parsed);
-        
-        // Only generate if we have minimal data and no existing recommendations
-        if ((!parsed.foodSuggestions?.length || !parsed.foodWarnings?.length) && 
-            parsed.age && parsed.weight && parsed.height) {
-          generateRecommendations(parsed);
-        }
+        setLastProfileHash(getProfileHash(parsed));
       } catch (e) {
         console.error("Error parsing saved profile:", e);
       }
@@ -60,13 +98,28 @@ const Profile = () => {
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setUserData({ ...userData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setUserData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const generateRecommendations = async (profileData: typeof userData) => {
-    // Validate required fields
-    if (!profileData.age || !profileData.weight || !profileData.height) {
-      setError("Please fill in age, weight, and height to get recommendations");
+  const generateRecommendations = async (profileData: UserData) => {
+    if (isGenerating) return;
+    
+    const requiredFields = ['age', 'weight', 'height'];
+    const missingFields = requiredFields.filter(field => !profileData[field]);
+    
+    if (missingFields.length > 0) {
+      setError(`Please fill in: ${missingFields.join(', ')} to get recommendations`);
+      return;
+    }
+
+    const currentHash = getProfileHash(profileData);
+    if (currentHash === lastProfileHash && 
+        profileData.foodSuggestions?.length && 
+        profileData.foodWarnings?.length) {
       return;
     }
 
@@ -83,7 +136,7 @@ const Profile = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
+        throw new Error(`Request failed with status ${response.status}`);
       }
 
       const data = await response.json();
@@ -99,11 +152,12 @@ const Profile = () => {
       };
       
       setUserData(updatedProfile);
+      setLastProfileHash(currentHash);
       localStorage.setItem("userProfile", JSON.stringify(updatedProfile));
       
     } catch (error) {
       console.error("Error generating recommendations:", error);
-      setError("Failed to generate recommendations. Please try again later.");
+      setError(error instanceof Error ? error.message : "Failed to generate recommendations");
     } finally {
       setIsGenerating(false);
     }
@@ -111,12 +165,25 @@ const Profile = () => {
 
   const handleSaveProfile = async () => {
     try {
-      localStorage.setItem("userProfile", JSON.stringify(userData));
+      setLoading(true);
+      setError(null);
+      
+      // Clear previous recommendations to force regeneration
+      const profileToSave = {
+        ...userData,
+        foodSuggestions: [],
+        foodWarnings: []
+      };
+      
+      localStorage.setItem("userProfile", JSON.stringify(profileToSave));
       setIsEditing(false);
-      await generateRecommendations(userData);
+      
+      await generateRecommendations(profileToSave);
     } catch (e) {
       console.error("Error saving profile:", e);
       setError("Failed to save profile");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -348,45 +415,6 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Habits */}
-        <div className="space-y-6 p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-xl font-bold text-teal-700 flex items-center">
-            <FaSmokingBan className="mr-2" /> Habits
-          </h3>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Smoking Status</label>
-            <select
-              name="smokingStatus"
-              value={userData.smokingStatus}
-              onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-              disabled={!isEditing}
-            >
-              <option value="">Select</option>
-              <option value="Non-smoker">Non-smoker</option>
-              <option value="Former smoker">Former smoker</option>
-              <option value="Occasional smoker">Occasional smoker</option>
-              <option value="Regular smoker">Regular smoker</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Alcohol Consumption</label>
-            <select
-              name="alcoholConsumption"
-              value={userData.alcoholConsumption}
-              onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-              disabled={!isEditing}
-            >
-              <option value="">Select</option>
-              <option value="Never">Never</option>
-              <option value="Rarely">Rarely</option>
-              <option value="Moderately">Moderately</option>
-              <option value="Regularly">Regularly</option>
-            </select>
-          </div>
-        </div>
-
         {/* Medical Information */}
         <div className="space-y-6 p-6 bg-white rounded-xl shadow-sm border border-gray-100">
           <h3 className="text-xl font-bold text-teal-700 flex items-center">
@@ -401,7 +429,7 @@ const Profile = () => {
               onChange={handleChange}
               className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
               disabled={!isEditing}
-              rows="3"
+              rows={3}
             />
           </div>
           <div>
@@ -413,7 +441,7 @@ const Profile = () => {
               onChange={handleChange}
               className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
               disabled={!isEditing}
-              rows="3"
+              rows={3}
             />
           </div>
           <div>
@@ -425,7 +453,7 @@ const Profile = () => {
               onChange={handleChange}
               className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
               disabled={!isEditing}
-              rows="3"
+              rows={3}
             />
           </div>
           <div>
@@ -437,7 +465,7 @@ const Profile = () => {
               onChange={handleChange}
               className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
               disabled={!isEditing}
-              rows="3"
+              rows={3}
             />
           </div>
         </div>
@@ -456,7 +484,7 @@ const Profile = () => {
               onChange={handleChange}
               className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
               disabled={!isEditing}
-              rows="3"
+              rows={3}
             />
           </div>
           <div>
@@ -468,7 +496,7 @@ const Profile = () => {
               onChange={handleChange}
               className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
               disabled={!isEditing}
-              rows="3"
+              rows={3}
             />
           </div>
           <div>
@@ -480,7 +508,7 @@ const Profile = () => {
               onChange={handleChange}
               className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
               disabled={!isEditing}
-              rows="3"
+              rows={3}
             />
           </div>
           <div>
@@ -492,7 +520,7 @@ const Profile = () => {
               onChange={handleChange}
               className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
               disabled={!isEditing}
-              rows="3"
+              rows={3}
             />
           </div>
         </div>
@@ -501,10 +529,21 @@ const Profile = () => {
       <div className="mt-10 flex justify-center gap-4">
         {isEditing ? (
           <button
-            className="px-8 py-3 bg-gradient-to-r from-teal-600 to-blue-600 text-white font-semibold rounded-full hover:opacity-90 transition shadow-lg flex items-center"
+            className="px-8 py-3 bg-gradient-to-r from-teal-600 to-blue-600 text-white font-semibold rounded-full hover:opacity-90 transition shadow-lg flex items-center disabled:opacity-50"
             onClick={handleSaveProfile}
+            disabled={loading}
           >
-            <FaSave className="inline-block mr-2" /> Save Profile
+            {loading ? (
+              <>
+                <FaSpinner className="animate-spin inline-block mr-2" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <FaSave className="inline-block mr-2" />
+                Save Profile & Generate Recommendations
+              </>
+            )}
           </button>
         ) : (
           <button
