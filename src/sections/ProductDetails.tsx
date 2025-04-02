@@ -4,15 +4,97 @@ interface Props {
   selectedProduct: {
     image_url?: string;
     product_name?: string;
-    countries_sold?: string;
-    category?: string;
-    threatened_species?: string;
-    allergens?: string;
-    packaging?: string;
+    countries_tags?: string[];
+    categories?: string;
+    ecoscore_data?: {
+      threatening_ingredients?: string[];
+    };
+    allergens_tags?: string[];
+    packaging_tags?: string[];
   };
 }
 
 const ProductDetails: React.FC<Props> = ({ selectedProduct }) => {
+
+  const COUNTRY_MAP: { [key: string]: string } = {
+    "germany": "Germany",
+    "france": "France",
+    "italy": "Italy",
+    // Add more country mappings as needed
+  };
+
+  const CATEGORY_TRANSLATIONS: { [key: string]: string } = {
+    "frühstücke": "Breakfast Foods",
+    "getränke": "Beverages",
+    "snacks": "Snacks",
+    // Add more category translations
+  };
+
+  // Helper functions to process data
+  const getCountries = () => {
+    if (!selectedProduct.countries_tags?.length) return "No country data";
+    
+    return selectedProduct.countries_tags
+      .map(country => {
+        const parts = country.split(':');
+        const countryKey = parts.length > 1 ? parts[1].toLowerCase() : country.toLowerCase();
+        return COUNTRY_MAP[countryKey] || countryKey.charAt(0).toUpperCase() + countryKey.slice(1);
+      })
+      .join(", ");
+  };
+
+  const getCategory = () => {
+    if (!selectedProduct.categories) return "Category not specified";
+    
+    const baseCategory = selectedProduct.categories
+      .split(',')
+      .shift()
+      ?.trim()
+      .toLowerCase();
+
+    return CATEGORY_TRANSLATIONS[baseCategory || ''] || 
+      baseCategory?.replace(/_/g, " ")
+                    .replace(/(^\w|\s\w)/g, m => m.toUpperCase()) || 
+      "N/A";
+  };
+
+  const getAllergens = () => {
+    if (!selectedProduct.allergens_tags?.length) return "No listed allergens";
+    
+    return selectedProduct.allergens_tags
+      .map(allergen => allergen
+        .replace(/^en:/, '')
+        .replace(/-/g, ' ')
+        .toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' '))
+      .join(", ");
+  };
+
+  const getPackaging = () => {
+    if (!selectedProduct.packaging_tags?.length) return "Packaging info not available";
+    
+    return selectedProduct.packaging_tags
+      .map(p => p.split(':').pop() || p)
+      .join(", ")
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  const getThreatenedSpecies = () => {
+    if (!selectedProduct.ecoscore_data?.threatening_ingredients?.length) {
+      return "No threatened species impact detected";
+    }
+    
+    return selectedProduct.ecoscore_data.threatening_ingredients
+      .join(", ")
+      .replace(/_/g, " ")
+      .replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+  };
+
   return (
     <div className="bg-gray-800 h-full p-6 rounded-lg shadow-md">
       <div className="flex flex-col md:flex-row gap-6">
@@ -50,7 +132,7 @@ const ProductDetails: React.FC<Props> = ({ selectedProduct }) => {
             </label>
             <textarea
               readOnly
-              value={selectedProduct.countries_sold || "Not Available"}
+              value={getCountries()}
               className="w-full min-h-[50px] p-2 border rounded-md bg-gray-50 resize-none"
             />
           </div>
@@ -62,7 +144,7 @@ const ProductDetails: React.FC<Props> = ({ selectedProduct }) => {
             </label>
             <textarea
               readOnly
-              value={selectedProduct.category || "Not Available"}
+              value={getCategory()}
               className="w-full min-h-[50px] p-2 border rounded-md bg-gray-50 resize-none"
             />
           </div>
@@ -74,7 +156,7 @@ const ProductDetails: React.FC<Props> = ({ selectedProduct }) => {
             </label>
             <textarea
               readOnly
-              value={selectedProduct.threatened_species || "Not Available"}
+              value={getThreatenedSpecies()}
               className="w-full min-h-[50px] p-2 border rounded-md bg-gray-50 resize-none"
             />
           </div>
@@ -86,7 +168,7 @@ const ProductDetails: React.FC<Props> = ({ selectedProduct }) => {
             </label>
             <textarea
               readOnly
-              value={selectedProduct.allergens || "Not Available"}
+              value={getAllergens()}
               className="w-full min-h-[50px] p-2 border rounded-md bg-gray-50 resize-none"
             />
           </div>
@@ -98,7 +180,7 @@ const ProductDetails: React.FC<Props> = ({ selectedProduct }) => {
             </label>
             <textarea
               readOnly
-              value={selectedProduct.packaging || "Not Available"}
+              value={getPackaging()}
               className="w-full min-h-[50px] p-2 border rounded-md bg-gray-50 resize-none"
             />
           </div>
