@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiUser, FiUsers, FiTarget, FiPlus, FiEdit2, FiTrash2, FiChevronRight, FiCheck } from 'react-icons/fi';
+import { FiUser, FiUsers, FiTarget, FiPlus, FiEdit2, FiTrash2, FiCheck } from 'react-icons/fi';
 
 type HealthCondition = {
   id: string;
@@ -88,24 +88,79 @@ export default function ProfessionalProfilePage() {
     return name.split(' ').map(part => part[0]).join('').toUpperCase();
   };
 
-  // Handle form submissions
+  // Save profile to MongoDB
+  const saveProfile = async (profileData: UserProfile) => {
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to save profile');
+      }
+      return data.profile;
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      throw error;
+    }
+  };
+
+  // Load profile from MongoDB
+  const loadProfile = async (email: string) => {
+    try {
+      const response = await fetch(`/api/profile?email=${encodeURIComponent(email)}`);
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to load profile');
+      }
+      return data.profile;
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      throw error;
+    }
+  };
+
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Profile saved:', profile);
+      const savedProfile = await saveProfile(profile);
+      setProfile(savedProfile);
+      alert('Profile saved successfully!');
       router.push('/dashboard');
     } catch (error) {
-      console.error('Error saving profile:', error);
+      alert(`Failed to save profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Tab navigation with smooth transitions
+  // Load profile data when component mounts
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        // In a real app, you would get this from your auth system
+        const userEmail = 'user@example.com'; 
+        const savedProfile = await loadProfile(userEmail);
+        if (savedProfile) {
+          setProfile(savedProfile);
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+      }
+    };
+
+    loadUserProfile();
+  }, []);
+
+  // Tab navigation component
   const TabButton = ({ tab, icon: Icon, label }: { tab: typeof activeTab; icon: React.ComponentType; label: string }) => (
     <button
       onClick={() => setActiveTab(tab)}
@@ -166,6 +221,7 @@ export default function ProfessionalProfilePage() {
                         value={profile.name}
                         onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        required
                       />
                     </div>
 
@@ -180,6 +236,7 @@ export default function ProfessionalProfilePage() {
                         value={profile.email}
                         onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        required
                       />
                     </div>
 
@@ -194,6 +251,9 @@ export default function ProfessionalProfilePage() {
                         value={profile.age}
                         onChange={(e) => setProfile({ ...profile, age: Number(e.target.value) })}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        required
+                        min="1"
+                        max="120"
                       />
                     </div>
 
@@ -207,6 +267,7 @@ export default function ProfessionalProfilePage() {
                         value={profile.gender}
                         onChange={(e) => setProfile({ ...profile, gender: e.target.value })}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        required
                       >
                         <option value="">Select</option>
                         <option value="male">Male</option>
@@ -226,6 +287,8 @@ export default function ProfessionalProfilePage() {
                         value={profile.weight || ''}
                         onChange={(e) => setProfile({ ...profile, weight: Number(e.target.value) })}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        min="1"
+                        step="0.1"
                       />
                     </div>
 
@@ -240,6 +303,7 @@ export default function ProfessionalProfilePage() {
                         value={profile.height || ''}
                         onChange={(e) => setProfile({ ...profile, height: Number(e.target.value) })}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        min="1"
                       />
                     </div>
 
@@ -348,6 +412,7 @@ export default function ProfessionalProfilePage() {
                           value={newFamilyMember.name}
                           onChange={(e) => setNewFamilyMember({ ...newFamilyMember, name: e.target.value })}
                           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          required
                         />
                       </div>
 
@@ -360,6 +425,7 @@ export default function ProfessionalProfilePage() {
                           value={newFamilyMember.relationship}
                           onChange={(e) => setNewFamilyMember({ ...newFamilyMember, relationship: e.target.value })}
                           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          required
                         >
                           <option value="">Select</option>
                           <option value="spouse">Spouse/Partner</option>
@@ -380,6 +446,9 @@ export default function ProfessionalProfilePage() {
                           value={newFamilyMember.age}
                           onChange={(e) => setNewFamilyMember({ ...newFamilyMember, age: Number(e.target.value) })}
                           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          required
+                          min="0"
+                          max="120"
                         />
                       </div>
 
@@ -623,6 +692,7 @@ export default function ProfessionalProfilePage() {
                             }
                           }))}
                           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          min="0"
                         />
                       </div>
                     </div>
