@@ -1,3 +1,5 @@
+// /sections/IngrediantsTable.tsx
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
 import { getIngredientHealthInfo } from "@/app/api/product-info/fetchIngredientInfo"; // Correct import path

@@ -1,3 +1,5 @@
+// /section/Food_search.tsx
+
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
@@ -74,7 +76,7 @@ const FoodSearch: React.FC = () => {
     setError("");
 
     try {
-      const { data } = await axios.get(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+      const { data } = await axios.get(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json?lc=en`);
       if (data.status === 1 && data.product) {
         setSelectedProduct(data.product);
         handleFindSubstitutes(data.product);
@@ -95,7 +97,7 @@ const FoodSearch: React.FC = () => {
     setError("");
 
     try {
-      const { data } = await axios.get(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${productName}&search_simple=1&json=1`);
+      const { data } = await axios.get(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${productName}&search_simple=1&json=1&lc=en`);
       if (data.products && data.products.length > 0) {
         setFoodDataList(data.products);
       } else {

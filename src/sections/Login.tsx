@@ -42,6 +42,13 @@ const Navbar = () => {
           </button>
         ) : (
           <div className="flex space-x-4 items-center">
+            <button
+              onClick={() => router.push("/report-missing-food")}
+              className="px-4 py-2 text-white bg-green-500 rounded-full shadow-md 
+               hover:bg-green-600 hover:scale-105 transition-transform duration-300 ease-in-out"
+            >
+              Add Missing Food
+            </button>
             <FaUserCircle
       className="w-8 h-8 text-blue-500 hover:text-purple-600 cursor-pointer transition-transform duration-300 ease-in-out transform hover:scale-110"
       onClick={() => router.push("/profile")}
