@@ -23,7 +23,7 @@ export default function CartPage() {
   }, []);
 
   const removeFromCart = (productId: string) => {
-    const updatedCart = cartItems.filter(item => item.id !== productId);
+    const updatedCart = cartItems.filter((item) => item.id !== productId);
     localStorage.setItem("cart", JSON.stringify(updatedCart));
     setCartItems(updatedCart);
     window.dispatchEvent(new Event("storage"));
@@ -36,16 +36,18 @@ export default function CartPage() {
   const formatList = (items?: string[]) => {
     if (!items || items.length === 0) return "Not specified";
     return items
-      .map(item => item.split(':').pop() || item)
-      .join(', ')
-      .replace(/_/g, ' ')
-      .replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+      .map((item) => item.split(":").pop() || item)
+      .join(", ")
+      .replace(/_/g, " ")
+      .replace(/(^\w|\s\w)/g, (m) => m.toUpperCase());
   };
 
   return (
     <div className="container mx-auto p-4 max-w-4xl">
-      <h1 className="text-2xl font-bold mb-6">Your Cart ({cartItems.length})</h1>
-      
+      <h1 className="text-2xl font-bold mb-6">
+        Your Cart ({cartItems.length})
+      </h1>
+
       {cartItems.length === 0 ? (
         <div className="text-center py-10">
           <p className="text-lg mb-4">Your cart is empty</p>
@@ -55,23 +57,29 @@ export default function CartPage() {
         </div>
       ) : (
         <div className="grid gap-4">
-          {cartItems.map(item => (
+          {cartItems.map((item) => (
             <div key={item.id} className="border rounded-lg overflow-hidden">
               {/* Clickable header */}
-              <div 
+              <div
                 className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50"
                 onClick={() => toggleExpand(item.id)}
               >
                 {item.image_url && (
-                  <img 
-                    src={item.image_url} 
-                    alt={item.product_name} 
+                  <img
+                    src={item.image_url}
+                    alt={item.product_name}
                     className="w-16 h-16 object-contain"
                   />
                 )}
                 <div className="flex-1">
-                  <h3 className="font-medium">{item.product_name || "Unnamed Product"}</h3>
-                  {item.code && <p className="text-sm text-gray-500">Barcode: {item.code}</p>}
+                  <h3 className="font-medium">
+                    {item.product_name || "Unnamed Product"}
+                  </h3>
+                  {item.code && (
+                    <p className="text-sm text-gray-500">
+                      Barcode: {item.code}
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={(e) => {
@@ -90,7 +98,7 @@ export default function CartPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
                       <h4 className="font-semibold">Category:</h4>
-                      <p>{formatList(item.categories?.split(','))}</p>
+                      <p>{formatList(item.categories?.split(","))}</p>
                     </div>
                     <div>
                       <h4 className="font-semibold">Countries:</h4>

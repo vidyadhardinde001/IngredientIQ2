@@ -9,37 +9,48 @@ const Navbar = () => {
   const [cartItemsCount, setCartItemsCount] = useState(0);
 
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    setIsAuthenticated(!!token);
-    
-    // Load cart items from localStorage
+    const checkAuth = () => {
+      const token = localStorage.getItem("authToken");
+      setIsAuthenticated(!!token);
+    };
+
+    // Initial check
+    checkAuth();
+
+    // Load cart items
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
     setCartItemsCount(cart.length);
-    
-    // Listen for cart updates from other components
-    const handleStorageChange = () => {
+
+    // Listen for auth changes
+    const handleAuthChange = () => checkAuth();
+    window.addEventListener("authChange", handleAuthChange);
+
+    // Listen for cart changes
+    const handleCartChange = () => {
       const updatedCart = JSON.parse(localStorage.getItem("cart") || "[]");
       setCartItemsCount(updatedCart.length);
     };
-    
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    window.addEventListener("storage", handleCartChange);
+
+    return () => {
+      window.removeEventListener("authChange", handleAuthChange);
+      window.removeEventListener("storage", handleCartChange);
+    };
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("authToken");
-    setIsAuthenticated(false);
+    window.dispatchEvent(new Event("authChange")); // Trigger auth state update
     router.push("/login");
   };
 
   const handleCartClick = () => {
-    // Directly go to cart page without authentication check
     router.push("/cart");
   };
 
   return (
     <nav className="flex justify-between items-center p-4 w-full bg-white shadow-md">
-      <div 
+      <div
         className="text-2xl font-bold text-gray-700 cursor-pointer"
         onClick={() => router.push("/")}
       >
@@ -47,9 +58,9 @@ const Navbar = () => {
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Cart Icon - always goes directly to cart */}
+        {/* Cart Icon */}
         <div className="relative group">
-          <div 
+          <div
             onClick={handleCartClick}
             className="p-2 rounded-full hover:bg-gray-100 cursor-pointer transition-colors"
           >
@@ -80,26 +91,18 @@ const Navbar = () => {
             />
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-500"
+              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-500 transition duration-300 ease-in-out"
             >
               Logout
             </button>
           </>
         ) : (
-          <>
-            <button
-              onClick={() => router.push("/login")}
-              className="px-6 py-2 text-white bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
-            >
-              Login
-            </button>
-            <button
-              onClick={() => router.push("/register")}
-              className="px-6 py-2 text-white bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
-            >
-              Register
-            </button>
-          </>
+          <button
+            onClick={() => router.push("/login")}
+            className="px-6 py-2 text-white bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
+          >
+            Login
+          </button>
         )}
       </div>
     </nav>
