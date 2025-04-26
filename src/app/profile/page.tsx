@@ -1,616 +1,716 @@
-"use client";
-import { useState, useEffect } from "react";
-import {
-  FaUser, FaWeight, FaHeartbeat, FaUtensils, FaAllergies,
-  FaCheckCircle, FaExclamationTriangle, FaEdit, FaSave,
-  FaRunning, FaPills, FaWater, FaSmokingBan, FaWineGlassAlt,
-  FaBed, FaDna, FaSpinner
-} from "react-icons/fa";
+'use client';
 
-interface UserData {
-  username: string;
-  age: string;
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { FiUser, FiUsers, FiTarget, FiPlus, FiEdit2, FiTrash2, FiChevronRight, FiCheck } from 'react-icons/fi';
+
+type HealthCondition = {
+  id: string;
+  type: 'diabetes' | 'heart' | 'hypertension' | 'allergy' | 'other';
+  subtype?: string;
+  severity: 'mild' | 'moderate' | 'severe';
+  label: string;
+};
+
+type FamilyMember = {
+  id: string;
+  name: string;
+  relationship: string;
+  age: number;
+  weight?: number;
+  height?: number;
+  conditions: HealthCondition[];
+  dietaryPreferences: string[];
+  includeInRecommendations: boolean;
+  avatarColor: string;
+};
+
+type UserProfile = {
+  name: string;
+  email: string;
+  age: number;
   gender: string;
-  weight: string;
-  height: string;
-  bloodType: string;
-  bloodPressure: string;
-  cholesterol: string;
-  glucoseLevel: string;
-  bmi: string;
-  activityLevel: string;
-  exerciseFrequency: string;
-  sleepHours: string;
-  waterIntake: string;
-  smokingStatus: string;
-  alcoholConsumption: string;
-  medications: string;
-  supplements: string;
-  healthConditions: string;
-  familyHistory: string;
-  dietaryPreferences: string;
-  allergies: string;
-  foodIntolerances: string;
-  knownDeficiencies: string;
-  foodSuggestions: string[];
-  foodWarnings: string[];
-}
+  weight?: number;
+  height?: number;
+  conditions: HealthCondition[];
+  dietaryPreferences: string[];
+  familyMembers: FamilyMember[];
+  nutritionGoals: {
+    weightManagement: 'lose' | 'maintain' | 'gain';
+    calorieTarget?: number;
+    macronutrients?: {
+      carbs?: number;
+      protein?: number;
+      fats?: number;
+    };
+  };
+};
 
-const Profile = () => {
-  const [userData, setUserData] = useState<UserData>({
-    username: "",
-    age: "",
-    gender: "",
-    weight: "",
-    height: "",
-    bloodType: "",
-    bloodPressure: "",
-    cholesterol: "",
-    glucoseLevel: "",
-    bmi: "",
-    activityLevel: "",
-    exerciseFrequency: "",
-    sleepHours: "",
-    waterIntake: "",
-    smokingStatus: "",
-    alcoholConsumption: "",
-    medications: "",
-    supplements: "",
-    healthConditions: "",
-    familyHistory: "",
-    dietaryPreferences: "",
-    allergies: "",
-    foodIntolerances: "",
-    knownDeficiencies: "",
-    foodSuggestions: [],
-    foodWarnings: [],
+const DEFAULT_CONDITIONS: HealthCondition[] = [
+  { id: 'diabetes-type1', type: 'diabetes', subtype: 'type1', severity: 'moderate', label: 'Type 1 Diabetes' },
+  { id: 'diabetes-type2', type: 'diabetes', subtype: 'type2', severity: 'moderate', label: 'Type 2 Diabetes' },
+  { id: 'heart-disease', type: 'heart', severity: 'moderate', label: 'Heart Disease' },
+  { id: 'hypertension', type: 'hypertension', severity: 'moderate', label: 'High Blood Pressure' },
+  { id: 'peanut-allergy', type: 'allergy', subtype: 'peanuts', severity: 'severe', label: 'Peanut Allergy' },
+  { id: 'gluten-allergy', type: 'allergy', subtype: 'gluten', severity: 'moderate', label: 'Gluten Intolerance' },
+];
+
+const AVATAR_COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+
+export default function ProfessionalProfilePage() {
+  const router = useRouter();
+  const [profile, setProfile] = useState<UserProfile>({
+    name: '',
+    email: '',
+    age: 0,
+    gender: '',
+    conditions: [],
+    dietaryPreferences: [],
+    familyMembers: [],
+    nutritionGoals: {
+      weightManagement: 'maintain'
+    }
   });
-  const [loading, setLoading] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [lastProfileHash, setLastProfileHash] = useState("");
+  const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'goals'>('personal');
+  const [isAddingMember, setIsAddingMember] = useState(false);
+  const [newFamilyMember, setNewFamilyMember] = useState<Omit<FamilyMember, 'id' | 'avatarColor'>>({
+    name: '',
+    relationship: '',
+    age: 0,
+    conditions: [],
+    dietaryPreferences: [],
+    includeInRecommendations: true
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const getProfileHash = (profile: UserData) => {
-    return JSON.stringify({
-      age: profile.age,
-      weight: profile.weight,
-      height: profile.height,
-      healthConditions: profile.healthConditions,
-      medications: profile.medications,
-      allergies: profile.allergies,
-      dietaryPreferences: profile.dietaryPreferences,
-      knownDeficiencies: profile.knownDeficiencies
-    });
+  // Utility to get initials for avatar
+  const getInitials = (name: string) => {
+    return name.split(' ').map(part => part[0]).join('').toUpperCase();
   };
 
-  useEffect(() => {
-    const savedProfile = localStorage.getItem("userProfile");
-    if (savedProfile) {
-      try {
-        const parsed = JSON.parse(savedProfile) as UserData;
-        setUserData(parsed);
-        setLastProfileHash(getProfileHash(parsed));
-      } catch (e) {
-        console.error("Error parsing saved profile:", e);
-      }
-    }
-  }, []);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setUserData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const generateRecommendations = async (profileData: UserData) => {
-    if (isGenerating) return;
-    
-    const requiredFields = ['age', 'weight', 'height'];
-    const missingFields = requiredFields.filter(field => !profileData[field]);
-    
-    if (missingFields.length > 0) {
-      setError(`Please fill in: ${missingFields.join(', ')} to get recommendations`);
-      return;
-    }
-
-    const currentHash = getProfileHash(profileData);
-    if (currentHash === lastProfileHash && 
-        profileData.foodSuggestions?.length && 
-        profileData.foodWarnings?.length) {
-      return;
-    }
-
-    setIsGenerating(true);
-    setError(null);
+  // Handle form submissions
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
     
     try {
-      const response = await fetch('/api/profile/openai', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(profileData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      if (!data.recommendations || !data.warnings) {
-        throw new Error("Invalid response format from API");
-      }
-
-      const updatedProfile = {
-        ...profileData,
-        foodSuggestions: data.recommendations,
-        foodWarnings: data.warnings
-      };
-      
-      setUserData(updatedProfile);
-      setLastProfileHash(currentHash);
-      localStorage.setItem("userProfile", JSON.stringify(updatedProfile));
-      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Profile saved:', profile);
+      router.push('/dashboard');
     } catch (error) {
-      console.error("Error generating recommendations:", error);
-      setError(error instanceof Error ? error.message : "Failed to generate recommendations");
+      console.error('Error saving profile:', error);
     } finally {
-      setIsGenerating(false);
+      setIsSubmitting(false);
     }
   };
 
-  const handleSaveProfile = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Clear previous recommendations to force regeneration
-      const profileToSave = {
-        ...userData,
-        foodSuggestions: [],
-        foodWarnings: []
-      };
-      
-      localStorage.setItem("userProfile", JSON.stringify(profileToSave));
-      setIsEditing(false);
-      
-      await generateRecommendations(profileToSave);
-    } catch (e) {
-      console.error("Error saving profile:", e);
-      setError("Failed to save profile");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEditProfile = () => {
-    setIsEditing(true);
-  };
+  // Tab navigation with smooth transitions
+  const TabButton = ({ tab, icon: Icon, label }: { tab: typeof activeTab; icon: React.ComponentType; label: string }) => (
+    <button
+      onClick={() => setActiveTab(tab)}
+      className={`flex items-center px-4 py-3 rounded-lg transition-all ${activeTab === tab ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}
+    >
+      <Icon className={`mr-2 ${activeTab === tab ? 'text-indigo-600' : 'text-gray-500'}`} />
+      <span className="font-medium">{label}</span>
+    </button>
+  );
 
   return (
-    <div className="max-w-6xl mx-auto p-8 bg-gradient-to-br from-teal-50 to-blue-50 shadow-2xl rounded-2xl mt-10 border border-gray-200">
-      <div className="text-center mb-10">
-        <h2 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-blue-600 mb-4">
-          🏥 Your Comprehensive Health Profile
-        </h2>
-        <p className="text-gray-600 text-lg">
-          Complete your profile for personalized health recommendations
-        </p>
-      </div>
-
-      {error && (
-        <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
-        </div>
-      )}
-
-      <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Personal Information */}
-        <div className="space-y-6 p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-xl font-bold text-teal-700 flex items-center">
-            <FaUser className="mr-2" /> Personal Information
-          </h3>
-          <input
-            type="text"
-            name="username"
-            placeholder="Full Name"
-            value={userData.username}
-            onChange={handleChange}
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-            disabled={!isEditing}
-          />
-          <input
-            type="number"
-            name="age"
-            placeholder="Age"
-            value={userData.age}
-            onChange={handleChange}
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-            disabled={!isEditing}
-          />
-          <select
-            name="gender"
-            value={userData.gender}
-            onChange={handleChange}
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-            disabled={!isEditing}
-          >
-            <option value="">Select Gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-            <option value="Prefer not to say">Prefer not to say</option>
-          </select>
-        </div>
-
-        {/* Body Metrics */}
-        <div className="space-y-6 p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-xl font-bold text-teal-700 flex items-center">
-            <FaWeight className="mr-2" /> Body Metrics
-          </h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
-              <input
-                type="number"
-                name="weight"
-                value={userData.weight}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-                disabled={!isEditing}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
-              <input
-                type="number"
-                name="height"
-                value={userData.height}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-                disabled={!isEditing}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">BMI</label>
-              <input
-                type="number"
-                name="bmi"
-                value={userData.bmi}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-                disabled={!isEditing}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Blood Type</label>
-              <select
-                name="bloodType"
-                value={userData.bloodType}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-                disabled={!isEditing}
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex flex-col md:flex-row gap-8">
+        {/* Sidebar Navigation */}
+        <div className="md:w-64 flex-shrink-0">
+          <div className="sticky top-8">
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">Health Profile</h1>
+            <nav className="space-y-1">
+              <TabButton tab="personal" icon={FiUser} label="Personal Info" />
+              <TabButton tab="family" icon={FiUsers} label="Family Members" />
+              <TabButton tab="goals" icon={FiTarget} label="Nutrition Goals" />
+            </nav>
+            
+            <div className="mt-8 border-t border-gray-200 pt-6">
+              <button
+                type="submit"
+                form="profile-form"
+                disabled={isSubmitting}
+                className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option value="">Select</option>
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-              </select>
+                {isSubmitting ? 'Saving...' : 'Save Profile'}
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Health Indicators */}
-        <div className="space-y-6 p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-xl font-bold text-teal-700 flex items-center">
-            <FaHeartbeat className="mr-2" /> Health Indicators
-          </h3>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Blood Pressure (mmHg)</label>
-            <input
-              type="text"
-              name="bloodPressure"
-              placeholder="e.g. 120/80"
-              value={userData.bloodPressure}
-              onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-              disabled={!isEditing}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cholesterol (mg/dL)</label>
-            <input
-              type="number"
-              name="cholesterol"
-              value={userData.cholesterol}
-              onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-              disabled={!isEditing}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Glucose Level (mg/dL)</label>
-            <input
-              type="number"
-              name="glucoseLevel"
-              value={userData.glucoseLevel}
-              onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-              disabled={!isEditing}
-            />
-          </div>
-        </div>
+        {/* Main Content */}
+        <div className="flex-1">
+          <form id="profile-form" onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            {/* Personal Information Tab */}
+            {activeTab === 'personal' && (
+              <div className="divide-y divide-gray-200">
+                <div className="px-6 py-5">
+                  <h2 className="text-lg font-medium text-gray-900">Personal Information</h2>
+                  <p className="mt-1 text-sm text-gray-500">This information will be used to personalize your food recommendations.</p>
+                </div>
+                
+                <div className="px-6 py-5 space-y-6">
+                  <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                    <div className="sm:col-span-3">
+                      <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                        Full name
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        id="name"
+                        value={profile.name}
+                        onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
 
-        {/* Lifestyle */}
-        <div className="space-y-6 p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-xl font-bold text-teal-700 flex items-center">
-            <FaRunning className="mr-2" /> Lifestyle
-          </h3>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Activity Level</label>
-            <select
-              name="activityLevel"
-              value={userData.activityLevel}
-              onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-              disabled={!isEditing}
-            >
-              <option value="">Select</option>
-              <option value="Sedentary">Sedentary</option>
-              <option value="Lightly Active">Lightly Active</option>
-              <option value="Moderately Active">Moderately Active</option>
-              <option value="Very Active">Very Active</option>
-              <option value="Extremely Active">Extremely Active</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Exercise Frequency</label>
-            <select
-              name="exerciseFrequency"
-              value={userData.exerciseFrequency}
-              onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-              disabled={!isEditing}
-            >
-              <option value="">Select</option>
-              <option value="Never">Never</option>
-              <option value="1-2 times/week">1-2 times/week</option>
-              <option value="3-4 times/week">3-4 times/week</option>
-              <option value="5+ times/week">5+ times/week</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sleep (hours/night)</label>
-            <input
-              type="number"
-              name="sleepHours"
-              value={userData.sleepHours}
-              onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-              disabled={!isEditing}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Water Intake (L/day)</label>
-            <input
-              type="number"
-              step="0.1"
-              name="waterIntake"
-              value={userData.waterIntake}
-              onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-              disabled={!isEditing}
-            />
-          </div>
-        </div>
+                    <div className="sm:col-span-3">
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                        Email address
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        id="email"
+                        value={profile.email}
+                        onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
 
-        {/* Medical Information */}
-        <div className="space-y-6 p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-xl font-bold text-teal-700 flex items-center">
-            <FaPills className="mr-2" /> Medical Information
-          </h3>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Current Medications</label>
-            <textarea
-              name="medications"
-              placeholder="List all medications"
-              value={userData.medications}
-              onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-              disabled={!isEditing}
-              rows={3}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Supplements</label>
-            <textarea
-              name="supplements"
-              placeholder="List all supplements"
-              value={userData.supplements}
-              onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-              disabled={!isEditing}
-              rows={3}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Health Conditions</label>
-            <textarea
-              name="healthConditions"
-              placeholder="List any health conditions"
-              value={userData.healthConditions}
-              onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-              disabled={!isEditing}
-              rows={3}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Family Medical History</label>
-            <textarea
-              name="familyHistory"
-              placeholder="List significant family medical history"
-              value={userData.familyHistory}
-              onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-              disabled={!isEditing}
-              rows={3}
-            />
-          </div>
-        </div>
+                    <div className="sm:col-span-2">
+                      <label htmlFor="age" className="block text-sm font-medium text-gray-700">
+                        Age
+                      </label>
+                      <input
+                        type="number"
+                        name="age"
+                        id="age"
+                        value={profile.age}
+                        onChange={(e) => setProfile({ ...profile, age: Number(e.target.value) })}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
 
-        {/* Dietary Information */}
-        <div className="space-y-6 p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-xl font-bold text-teal-700 flex items-center">
-            <FaUtensils className="mr-2" /> Dietary Information
-          </h3>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Dietary Preferences</label>
-            <textarea
-              name="dietaryPreferences"
-              placeholder="e.g. Vegetarian, Vegan, Keto, etc."
-              value={userData.dietaryPreferences}
-              onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-              disabled={!isEditing}
-              rows={3}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Food Allergies</label>
-            <textarea
-              name="allergies"
-              placeholder="List all food allergies"
-              value={userData.allergies}
-              onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-              disabled={!isEditing}
-              rows={3}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Food Intolerances</label>
-            <textarea
-              name="foodIntolerances"
-              placeholder="List any food intolerances"
-              value={userData.foodIntolerances}
-              onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-              disabled={!isEditing}
-              rows={3}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Known Nutrient Deficiencies</label>
-            <textarea
-              name="knownDeficiencies"
-              placeholder="List any known deficiencies"
-              value={userData.knownDeficiencies}
-              onChange={handleChange}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 shadow-sm"
-              disabled={!isEditing}
-              rows={3}
-            />
-          </div>
-        </div>
-      </form>
+                    <div className="sm:col-span-2">
+                      <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
+                        Gender
+                      </label>
+                      <select
+                        id="gender"
+                        name="gender"
+                        value={profile.gender}
+                        onChange={(e) => setProfile({ ...profile, gender: e.target.value })}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      >
+                        <option value="">Select</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
 
-      <div className="mt-10 flex justify-center gap-4">
-        {isEditing ? (
-          <button
-            className="px-8 py-3 bg-gradient-to-r from-teal-600 to-blue-600 text-white font-semibold rounded-full hover:opacity-90 transition shadow-lg flex items-center disabled:opacity-50"
-            onClick={handleSaveProfile}
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <FaSpinner className="animate-spin inline-block mr-2" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <FaSave className="inline-block mr-2" />
-                Save Profile & Generate Recommendations
-              </>
+                    <div className="sm:col-span-2">
+                      <label htmlFor="weight" className="block text-sm font-medium text-gray-700">
+                        Weight (kg)
+                      </label>
+                      <input
+                        type="number"
+                        name="weight"
+                        id="weight"
+                        value={profile.weight || ''}
+                        onChange={(e) => setProfile({ ...profile, weight: Number(e.target.value) })}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label htmlFor="height" className="block text-sm font-medium text-gray-700">
+                        Height (cm)
+                      </label>
+                      <input
+                        type="number"
+                        name="height"
+                        id="height"
+                        value={profile.height || ''}
+                        onChange={(e) => setProfile({ ...profile, height: Number(e.target.value) })}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      />
+                    </div>
+
+                    {profile.weight && profile.height && (
+                      <div className="sm:col-span-2 flex items-end">
+                        <div className="w-full bg-gray-50 rounded-md p-3">
+                          <p className="text-xs font-medium text-gray-500">YOUR BMI</p>
+                          <p className="text-xl font-semibold text-gray-900">
+                            {(profile.weight / ((profile.height / 100) ** 2)).toFixed(1)}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="px-6 py-5">
+                  <h2 className="text-lg font-medium text-gray-900">Health Conditions</h2>
+                  <p className="mt-1 text-sm text-gray-500">Select any conditions that affect your dietary needs.</p>
+                  
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {DEFAULT_CONDITIONS.map((condition) => {
+                      const isActive = profile.conditions.some(c => c.id === condition.id);
+                      return (
+                        <button
+                          key={condition.id}
+                          type="button"
+                          onClick={() => {
+                            setProfile(prev => ({
+                              ...prev,
+                              conditions: isActive
+                                ? prev.conditions.filter(c => c.id !== condition.id)
+                                : [...prev.conditions, condition]
+                            }));
+                          }}
+                          className={`flex items-center justify-between px-4 py-2 rounded-md border ${isActive ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-300 hover:border-gray-400'}`}
+                        >
+                          <span>{condition.label}</span>
+                          {isActive && <FiCheck className="text-indigo-600" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="px-6 py-5">
+                  <h2 className="text-lg font-medium text-gray-900">Dietary Preferences</h2>
+                  <p className="mt-1 text-sm text-gray-500">Select your dietary preferences and restrictions.</p>
+                  
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    {['Vegetarian', 'Vegan', 'Keto', 'Low-carb', 'Dairy-free', 'Gluten-free'].map((pref) => (
+                      <button
+                        key={pref}
+                        type="button"
+                        onClick={() => {
+                          setProfile(prev => ({
+                            ...prev,
+                            dietaryPreferences: prev.dietaryPreferences.includes(pref)
+                              ? prev.dietaryPreferences.filter(p => p !== pref)
+                              : [...prev.dietaryPreferences, pref]
+                          }));
+                        }}
+                        className={`flex items-center px-4 py-2 rounded-md border ${profile.dietaryPreferences.includes(pref) ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-300 hover:border-gray-400'}`}
+                      >
+                        {pref}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
-          </button>
-        ) : (
-          <button
-            className="px-8 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-semibold rounded-full hover:opacity-90 transition shadow-lg flex items-center"
-            onClick={handleEditProfile}
-          >
-            <FaEdit className="inline-block mr-2" /> Edit Profile
-          </button>
-        )}
-      </div>
 
-      {/* Recommendations Section */}
-      <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="p-6 bg-gradient-to-br from-teal-100 to-blue-100 rounded-xl shadow-md border border-teal-200">
-          <h3 className="text-xl font-bold text-teal-700 flex items-center">
-            <FaCheckCircle className="mr-2" /> Recommended Foods & Nutrients
-          </h3>
-          {isGenerating ? (
-            <div className="flex items-center justify-center py-8">
-              <FaSpinner className="animate-spin text-teal-600 text-2xl mr-2" />
-              <span>Generating personalized recommendations...</span>
-            </div>
-          ) : (
-            <ul className="list-disc ml-6 mt-4 space-y-2">
-              {userData.foodSuggestions?.length > 0 ? (
-                userData.foodSuggestions.map((item, i) => (
-                  <li key={i} className="text-gray-700">
-                    {item}
-                  </li>
-                ))
-              ) : (
-                <p className="text-gray-600 mt-2">
-                  Complete your profile and save to receive personalized food and nutrient recommendations.
-                </p>
-              )}
-            </ul>
-          )}
-        </div>
+            {/* Family Members Tab */}
+            {activeTab === 'family' && (
+              <div className="divide-y divide-gray-200">
+                <div className="px-6 py-5 flex justify-between items-center">
+                  <div>
+                    <h2 className="text-lg font-medium text-gray-900">Family Members</h2>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Add family members to get personalized recommendations for everyone.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingMember(true)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    <FiPlus className="mr-2" />
+                    Add Family Member
+                  </button>
+                </div>
 
-        <div className="p-6 bg-gradient-to-br from-red-50 to-orange-50 rounded-xl shadow-md border border-red-200">
-          <h3 className="text-xl font-bold text-red-700 flex items-center">
-            <FaExclamationTriangle className="mr-2" /> Foods & Substances to Avoid
-          </h3>
-          {isGenerating ? (
-            <div className="flex items-center justify-center py-8">
-              <FaSpinner className="animate-spin text-red-600 text-2xl mr-2" />
-              <span>Generating safety recommendations...</span>
-            </div>
-          ) : (
-            <ul className="list-disc ml-6 mt-4 space-y-2">
-              {userData.foodWarnings?.length > 0 ? (
-                userData.foodWarnings.map((item, i) => (
-                  <li key={i} className="text-red-600">
-                    {item}
-                  </li>
-                ))
-              ) : (
-                <p className="text-gray-600 mt-2">
-                  Provide your health details and save to get warnings about foods to avoid.
-                </p>
-              )}
-            </ul>
-          )}
+                {/* Add Family Member Form */}
+                {isAddingMember && (
+                  <div className="px-6 py-5 bg-gray-50 border-b border-gray-200">
+                    <h3 className="text-md font-medium text-gray-900 mb-4">New Family Member</h3>
+                    
+                    <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                      <div className="sm:col-span-3">
+                        <label htmlFor="member-name" className="block text-sm font-medium text-gray-700">
+                          Full name
+                        </label>
+                        <input
+                          type="text"
+                          id="member-name"
+                          value={newFamilyMember.name}
+                          onChange={(e) => setNewFamilyMember({ ...newFamilyMember, name: e.target.value })}
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-3">
+                        <label htmlFor="relationship" className="block text-sm font-medium text-gray-700">
+                          Relationship
+                        </label>
+                        <select
+                          id="relationship"
+                          value={newFamilyMember.relationship}
+                          onChange={(e) => setNewFamilyMember({ ...newFamilyMember, relationship: e.target.value })}
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        >
+                          <option value="">Select</option>
+                          <option value="spouse">Spouse/Partner</option>
+                          <option value="child">Child</option>
+                          <option value="parent">Parent</option>
+                          <option value="sibling">Sibling</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label htmlFor="member-age" className="block text-sm font-medium text-gray-700">
+                          Age
+                        </label>
+                        <input
+                          type="number"
+                          id="member-age"
+                          value={newFamilyMember.age}
+                          onChange={(e) => setNewFamilyMember({ ...newFamilyMember, age: Number(e.target.value) })}
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-4 flex items-end">
+                        <div className="flex items-center h-10">
+                          <input
+                            id="include-in-recommendations"
+                            name="include-in-recommendations"
+                            type="checkbox"
+                            checked={newFamilyMember.includeInRecommendations}
+                            onChange={(e) => setNewFamilyMember({ ...newFamilyMember, includeInRecommendations: e.target.checked })}
+                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                          />
+                          <label htmlFor="include-in-recommendations" className="ml-2 block text-sm text-gray-700">
+                            Include in product recommendations
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-6">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Health Conditions</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {DEFAULT_CONDITIONS.map((condition) => (
+                          <button
+                            key={condition.id}
+                            type="button"
+                            onClick={() => {
+                              setNewFamilyMember(prev => ({
+                                ...prev,
+                                conditions: prev.conditions.some(c => c.id === condition.id)
+                                  ? prev.conditions.filter(c => c.id !== condition.id)
+                                  : [...prev.conditions, condition]
+                              }));
+                            }}
+                            className={`flex items-center px-3 py-1 rounded-full text-xs font-medium ${newFamilyMember.conditions.some(c => c.id === condition.id) ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+                          >
+                            {condition.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mt-6 flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingMember(false)}
+                        className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfile(prev => ({
+                            ...prev,
+                            familyMembers: [
+                              ...prev.familyMembers,
+                              {
+                                ...newFamilyMember,
+                                id: `member-${Date.now()}`,
+                                avatarColor: AVATAR_COLORS[prev.familyMembers.length % AVATAR_COLORS.length]
+                              }
+                            ]
+                          }));
+                          setNewFamilyMember({
+                            name: '',
+                            relationship: '',
+                            age: 0,
+                            conditions: [],
+                            dietaryPreferences: [],
+                            includeInRecommendations: true
+                          });
+                          setIsAddingMember(false);
+                        }}
+                        disabled={!newFamilyMember.name || !newFamilyMember.relationship}
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Add Member
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Family Members List */}
+                <div className="px-6 py-5">
+                  {profile.familyMembers.length > 0 ? (
+                    <ul className="divide-y divide-gray-200">
+                      {profile.familyMembers.map((member) => (
+                        <li key={member.id} className="py-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <div 
+                                className="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center text-white font-medium"
+                                style={{ backgroundColor: member.avatarColor }}
+                              >
+                                {getInitials(member.name)}
+                              </div>
+                              <div className="ml-4">
+                                <p className="text-sm font-medium text-gray-900">{member.name}</p>
+                                <p className="text-sm text-gray-500">
+                                  {member.relationship} • {member.age} years old
+                                </p>
+                                {member.conditions.length > 0 && (
+                                  <div className="mt-1 flex flex-wrap gap-1">
+                                    {member.conditions.map((condition) => (
+                                      <span 
+                                        key={condition.id}
+                                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
+                                      >
+                                        {condition.label}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex space-x-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setNewFamilyMember({
+                                    name: member.name,
+                                    relationship: member.relationship,
+                                    age: member.age,
+                                    conditions: member.conditions,
+                                    dietaryPreferences: member.dietaryPreferences,
+                                    includeInRecommendations: member.includeInRecommendations
+                                  });
+                                  setProfile(prev => ({
+                                    ...prev,
+                                    familyMembers: prev.familyMembers.filter(m => m.id !== member.id)
+                                  }));
+                                  setIsAddingMember(true);
+                                }}
+                                className="inline-flex items-center p-1.5 border border-gray-300 rounded-full shadow-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                              >
+                                <FiEdit2 className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setProfile(prev => ({
+                                    ...prev,
+                                    familyMembers: prev.familyMembers.filter(m => m.id !== member.id)
+                                  }));
+                                }}
+                                className="inline-flex items-center p-1.5 border border-gray-300 rounded-full shadow-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                              >
+                                <FiTrash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="text-center py-8">
+                      <svg
+                        className="mx-auto h-12 w-12 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                        />
+                      </svg>
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">No family members</h3>
+                      <p className="mt-1 text-sm text-gray-500">
+                        Get started by adding a family member to your profile.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Nutrition Goals Tab */}
+            {activeTab === 'goals' && (
+              <div className="divide-y divide-gray-200">
+                <div className="px-6 py-5">
+                  <h2 className="text-lg font-medium text-gray-900">Nutrition Goals</h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Set your nutrition goals to receive personalized food recommendations.
+                  </p>
+                </div>
+
+                <div className="px-6 py-5">
+                  <div className="space-y-6">
+                    <fieldset>
+                      <legend className="text-sm font-medium text-gray-700">Weight Management</legend>
+                      <div className="mt-4 grid grid-cols-1 gap-y-4 sm:grid-cols-3 sm:gap-x-4">
+                        {[
+                          { id: 'lose', label: 'Lose Weight' },
+                          { id: 'maintain', label: 'Maintain Weight' },
+                          { id: 'gain', label: 'Gain Weight' }
+                        ].map((option) => (
+                          <div key={option.id} className="flex items-center">
+                            <input
+                              id={option.id}
+                              name="weightManagement"
+                              type="radio"
+                              checked={profile.nutritionGoals.weightManagement === option.id}
+                              onChange={() => setProfile(prev => ({
+                                ...prev,
+                                nutritionGoals: {
+                                  ...prev.nutritionGoals,
+                                  weightManagement: option.id as 'lose' | 'maintain' | 'gain'
+                                }
+                              }))}
+                              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                            />
+                            <label htmlFor={option.id} className="ml-3 block text-sm font-medium text-gray-700">
+                              {option.label}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </fieldset>
+
+                    <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                      <div className="sm:col-span-3">
+                        <label htmlFor="calorieTarget" className="block text-sm font-medium text-gray-700">
+                          Daily Calorie Target (optional)
+                        </label>
+                        <input
+                          type="number"
+                          name="calorieTarget"
+                          id="calorieTarget"
+                          value={profile.nutritionGoals.calorieTarget || ''}
+                          onChange={(e) => setProfile(prev => ({
+                            ...prev,
+                            nutritionGoals: {
+                              ...prev.nutritionGoals,
+                              calorieTarget: Number(e.target.value)
+                            }
+                          }))}
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-3">Macronutrient Distribution (optional)</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label htmlFor="protein" className="block text-sm font-medium text-gray-700">
+                            Protein (%)
+                          </label>
+                          <input
+                            type="number"
+                            name="protein"
+                            id="protein"
+                            value={profile.nutritionGoals.macronutrients?.protein || ''}
+                            onChange={(e) => setProfile(prev => ({
+                              ...prev,
+                              nutritionGoals: {
+                                ...prev.nutritionGoals,
+                                macronutrients: {
+                                  ...prev.nutritionGoals.macronutrients,
+                                  protein: Number(e.target.value)
+                                }
+                              }
+                            }))}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            min="0"
+                            max="100"
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="carbs" className="block text-sm font-medium text-gray-700">
+                            Carbohydrates (%)
+                          </label>
+                          <input
+                            type="number"
+                            name="carbs"
+                            id="carbs"
+                            value={profile.nutritionGoals.macronutrients?.carbs || ''}
+                            onChange={(e) => setProfile(prev => ({
+                              ...prev,
+                              nutritionGoals: {
+                                ...prev.nutritionGoals,
+                                macronutrients: {
+                                  ...prev.nutritionGoals.macronutrients,
+                                  carbs: Number(e.target.value)
+                                }
+                              }
+                            }))}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            min="0"
+                            max="100"
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="fats" className="block text-sm font-medium text-gray-700">
+                            Fats (%)
+                          </label>
+                          <input
+                            type="number"
+                            name="fats"
+                            id="fats"
+                            value={profile.nutritionGoals.macronutrients?.fats || ''}
+                            onChange={(e) => setProfile(prev => ({
+                              ...prev,
+                              nutritionGoals: {
+                                ...prev.nutritionGoals,
+                                macronutrients: {
+                                  ...prev.nutritionGoals.macronutrients,
+                                  fats: Number(e.target.value)
+                                }
+                              }
+                            }))}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            min="0"
+                            max="100"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </form>
         </div>
       </div>
     </div>
   );
-};
-
-export default Profile;
+}
