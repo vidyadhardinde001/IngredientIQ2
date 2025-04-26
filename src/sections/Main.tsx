@@ -1,3 +1,5 @@
+// sections/Main.tsx
+
 import React, { useState } from "react";
 import { Box, Button } from "@mui/material";
 import SearchAndScan from "./SearchInput"; // Import your SearchAndScan component

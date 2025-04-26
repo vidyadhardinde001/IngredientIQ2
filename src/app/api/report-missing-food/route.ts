@@ -1,3 +1,5 @@
+// api/report-missing-food/route.ts
+
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db"; 
 import MissingFood from "@/models/MissingFood"; 

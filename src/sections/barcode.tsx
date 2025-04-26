@@ -1,3 +1,5 @@
+// sections/barcode.tsx
+
 import { useState } from "react";
 import Tesseract from "tesseract.js";
 

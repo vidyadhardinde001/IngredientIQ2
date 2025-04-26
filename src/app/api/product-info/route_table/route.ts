@@ -1,3 +1,5 @@
+// api/product-info/route_table/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import fs from "fs";

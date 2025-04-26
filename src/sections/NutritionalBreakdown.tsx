@@ -1,3 +1,5 @@
+// sections/NutritionalBreakdown.tsx
+
 import React from "react";
 import { Card, CardContent, Typography } from "@mui/material";
 import { Bar } from "react-chartjs-2";

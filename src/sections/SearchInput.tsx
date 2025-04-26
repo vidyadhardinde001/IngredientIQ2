@@ -1,3 +1,5 @@
+// sections/SearchInput.tsx
+
 import React, { useState } from "react";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/solid";
 import BarcodeScannerComponent from "react-qr-barcode-scanner";

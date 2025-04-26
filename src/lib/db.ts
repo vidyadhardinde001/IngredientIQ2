@@ -1,3 +1,5 @@
+// lib/db.ts
+
 import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://adityakhandare8320:YmkOcqqoXkfQXrVR@cluster0.js3vm.mongodb.net/IngredientIQ?retryWrites=true&w=majority";
