@@ -1,3 +1,5 @@
+// /lib/healthRules.ts
+
 // Defines health rules for different conditions
 export const healthRules = {
     diabetes: {
