@@ -24,33 +24,43 @@ export async function POST(req: Request) {
                     healthIssues || [],
                     allergies || []
                 );
-                
+
                 if ("error" in user) {
-                    throw new Error(user.error); // ❌ Instead of returning an object, throw an error
+                    throw new Error(user.error);
                 }
-        
+
                 return NextResponse.json({ message: "User registered", user });
-            } catch (error: any) {
-                return NextResponse.json({ error: error.message }, { status: 400 }); // ✅ Correctly return 400
+            } catch (error) {
+                return NextResponse.json(
+                    { error: error instanceof Error ? error.message : "Registration failed" },
+                    { status: 400 }
+                );
             }
-        } else if (action === "login") {
+        } 
+        
+        if (action === "login") {
             console.log("Login Attempt:", email, password);
-            
+
             try {
                 const token = await loginUser(email, password);
                 console.log("Login Token:", token);
-        
+
                 return NextResponse.json({ token });
             } catch (error) {
-                return NextResponse.json({ error: error.message }, { status: 401 }); // Correctly return 401
+                return NextResponse.json(
+                    { error: error instanceof Error ? error.message : "Login failed" },
+                    { status: 401 }
+                );
             }
-        } else {
-            return NextResponse.json({ error: "Invalid action" }, { status: 400 });
-        }
-    } catch (error: any) {
+        } 
+
+        return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+
+    } catch (error) {
         console.error("POST /api/auth Error:", error);
+
         return NextResponse.json(
-            { error: error.message || "Internal server error" },
+            { error: error instanceof Error ? error.message : "Internal server error" },
             { status: 500 }
         );
     }
