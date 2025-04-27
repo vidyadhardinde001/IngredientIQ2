@@ -1,3 +1,5 @@
+// models/MissingFood.ts
+
 import mongoose, { Schema, Document } from "mongoose";
 
 // Define the interface with new fields

@@ -1,3 +1,5 @@
+// sections/ProductList.tsx
+
 import React from "react";
 
 interface Props {

@@ -10,7 +10,8 @@ import DetailedInfo from "./DetailedInfo";
 import NutritionalChart from "./NutritionalChart";
 import SkeletonLoader from "./SkeletonLoader";
 import HealthInfo from "./HealthInfo";
-import { findSubstitutes } from "@/lib/substituteFinder";
+import { findSubstitutes, isNutritionallyBetter } from "@/lib/substituteFinder";
+import { healthRules } from "@/lib/healthRules";
 
 const FoodSearch: React.FC = () => {
   const [barcode, setBarcode] = useState("");
@@ -32,17 +33,26 @@ const FoodSearch: React.FC = () => {
     });
   }, []);
 
-  const handleFindSubstitutes = async (product: any) => {
-    if (!product) return;
-    setSubstituteLoading(true);
-    try {
-      const substitutes = await findSubstitutes(product, healthData);
-      setSubstitutes(substitutes);
-    } catch (error) {
-      console.error("Substitute search failed:", error);
-    }
-    setSubstituteLoading(false);
-  };
+  // sections/Food_Search.tsx
+
+const handleFindSubstitutes = async (product: any) => {
+  if (!product) return;
+  setSubstituteLoading(true);
+  try {
+    const substitutes = await findSubstitutes(product, healthData);
+    
+    // // Additional filter for nutritional criteria
+    // const filteredSubstitutes = substitutes.filter(sub => 
+    //   isNutritionallyBetter(sub, product, healthData.healthIssues, healthRules)
+    // );
+    
+    setSubstitutes(substitutes);
+    // console.log(filteredSubstitutes);
+  } catch (error) {
+    console.error("Substitute search failed:", error);
+  }
+  setSubstituteLoading(false);
+};
 
   const fetchAdditionalProductInfo = async (name: string) => {
     if (!name) return;
@@ -167,22 +177,48 @@ const FoodSearch: React.FC = () => {
       </div>
 
       {/* Substitutes Section */}
-      {substitutes.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold text-white mb-4">Healthier Alternatives</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {substitutes.map((sub) => (
-              <div key={sub.code} className="bg-gray-800 p-4 rounded-lg">
-                <img src={sub.image_url} alt={sub.product_name} className="w-full h-48 object-contain mb-4" />
-                <h3 className="text-lg font-semibold text-white">{sub.product_name || "Unnamed Product"}</h3>
-                <button onClick={() => handleProductSelect(sub)} className="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg">
-                  View Details
-                </button>
-              </div>
-            ))}
+      {/* // sections/ProductDetails.tsx */}
+
+{/* Add this section under the main product details */}
+{/* // Update the substitutes section in Food_Search.tsx */}
+{substitutes.length > 0 && (
+  <div className="mt-8">
+    <h2 className="text-2xl font-bold text-white mb-4">Healthier Alternatives</h2>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {substitutes.map((sub) => (
+        <div key={sub.code || sub._id || sub.product_name} className="bg-gray-800 p-4 rounded-lg">
+          {sub.image_url ? (
+            <img 
+              src={sub.image_url} 
+              alt={sub.product_name} 
+              className="w-full h-48 object-contain mb-4"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/placeholder-product.png';
+              }}
+            />
+          ) : (
+            <div className="w-full h-48 bg-gray-700 flex items-center justify-center mb-4">
+              <span className="text-gray-400">No image available</span>
+            </div>
+          )}
+          <h3 className="text-lg font-semibold text-white">
+            {sub.product_name || "Unnamed Product"}
+          </h3>
+          <div className="mt-2 text-sm text-gray-300">
+            {sub.brands && <p>Brand: {sub.brands}</p>}
+            {sub.quantity && <p>Size: {sub.quantity}</p>}
           </div>
+          <button 
+            onClick={() => handleProductSelect(sub)} 
+            className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg transition-colors"
+          >
+            View Details
+          </button>
         </div>
-      )}
+      ))}
+    </div>
+  </div>
+)}
 
       {substituteLoading && <p className="text-purple-500 mt-2 text-center">Finding healthier alternatives...</p>}
       {error && <p className="text-red-500 text-center mt-4">{error}</p>}

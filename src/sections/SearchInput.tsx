@@ -1,3 +1,5 @@
+// sections/SearchInput.tsx
+
 "use client";
 import React, { useState } from "react";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/solid";

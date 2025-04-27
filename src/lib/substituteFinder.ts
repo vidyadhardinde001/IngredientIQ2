@@ -1,3 +1,5 @@
+// lib/substituteFinder.ts
+
 import { HealthCondition, healthRules } from "@/lib/healthRules";
 
 import axios from "axios";
@@ -63,22 +65,56 @@ export const isNutritionallyBetter = (
   });
 };
 
+export const getChatGPTSubstitutes = async (productName: string, healthData: HealthData): Promise<string[]> => {
+  try {
+    const response = await fetch('/api/product-info/substitutes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ productName,healthIssues: healthData.healthIssues,
+        allergies: healthData.allergies }),
+    });
+
+    if (!response.ok) throw new Error('Failed to get substitutes from ChatGPT');
+    
+    const data = await response.json();
+    console.log("substitues: ", data);
+    return data.substitutes;
+  } catch (error) {
+    console.error('ChatGPT substitute search failed:', error);
+    return [];
+  }
+};
+
 export const findSubstitutes = async (
   originalProduct: Product,
   healthData: HealthData
 ): Promise<Product[]> => {
   try {
-    const category = getProductCategory(originalProduct);
-    const response = await axios.get(
-      `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(category)}&json=1&sort_by=popularity&page_size=30`
+    const chatGPTSubstitutes = await getChatGPTSubstitutes(originalProduct.product_name || originalProduct.code || '', healthData);
+    
+    const verifiedSubstitutes = await Promise.all(
+      chatGPTSubstitutes.map(async (substituteName) => {
+        try {
+          const response = await axios.get(
+            `/api/proxy?query=${encodeURIComponent(
+              `search_terms=${substituteName}&json=1&page_size=1`
+            )}`
+          );
+          return response.data.products?.[0] || null;
+        } catch (error) {
+          console.error(`Failed to fetch ${substituteName}:`, error);
+          return null;
+        }
+      })
     );
 
-    return response.data.products?.filter((product: Product) => (
+    return verifiedSubstitutes.filter((product): product is Product => (
+      product !== null &&
       product.code !== originalProduct.code &&
-      !hasAllergens(product, healthData.allergies) &&
-      isNutritionallyBetter(product, originalProduct, healthData.healthIssues, healthRules) &&
-      isWidelyAvailable(product)
-    )).slice(0, 5) || [];
+      !hasAllergens(product, healthData.allergies)
+    )).slice(0, 5);
   } catch (error) {
     console.error("Substitute search failed:", error);
     return [];
