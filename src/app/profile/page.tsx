@@ -5,6 +5,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiUser, FiUsers, FiTarget, FiPlus, FiEdit2, FiTrash2, FiCheck } from 'react-icons/fi';
+import jwt from "jsonwebtoken";
+import { getCurrentUser } from '@/lib/auth-utils';
 
 type HealthCondition = {
   id: string;
@@ -133,10 +135,13 @@ export default function ProfessionalProfilePage() {
     setIsSubmitting(true);
     
     try {
-      const savedProfile = await saveProfile(profile);
+      const userEmail = getCurrentUserEmail();
+      console.log(userEmail);
+      const profileToSave = { ...profile, email: userEmail };
+      const savedProfile = await saveProfile(profileToSave);
       setProfile(savedProfile);
       alert('Profile saved successfully!');
-      router.push('/dashboard');
+      router.push('/');
     } catch (error) {
       alert(`Failed to save profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
@@ -144,12 +149,16 @@ export default function ProfessionalProfilePage() {
     }
   };
 
+  const getCurrentUserEmail = () => {
+    const user = getCurrentUser();
+    return user?.email || 'user@example.com'; // fallback only for development
+};
+
   // Load profile data when component mounts
   useEffect(() => {
     const loadUserProfile = async () => {
       try {
-        // In a real app, you would get this from your auth system
-        const userEmail = 'user@example.com'; 
+        const userEmail = getCurrentUserEmail();
         const savedProfile = await loadProfile(userEmail);
         if (savedProfile) {
           setProfile(savedProfile);
@@ -158,7 +167,6 @@ export default function ProfessionalProfilePage() {
         console.error('Failed to load profile:', error);
       }
     };
-
     loadUserProfile();
   }, []);
 

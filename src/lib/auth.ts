@@ -58,7 +58,8 @@ if (!secret) {
         // Updated JWT payload with health data
         const token = jwt.sign(
             { 
-                userId: user._id, 
+                userId: user._id,
+                username: user.username,
                 email: user.email,
                 healthData: {
                     healthIssues: user.healthIssues,
