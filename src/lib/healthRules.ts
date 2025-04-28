@@ -15,6 +15,9 @@ export const healthRules = {
     gluten: {
       avoidIngredients: ["wheat", "barley", "rye"]
     },
+    hypertension: {
+      maxSalt: 1.5, // grams per 100g
+    }
     // Add more conditions as needed
   };
   

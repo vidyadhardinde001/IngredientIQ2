@@ -12,6 +12,9 @@ import SkeletonLoader from "./SkeletonLoader";
 import HealthInfo from "./HealthInfo";
 import { findSubstitutes, isNutritionallyBetter } from "@/lib/substituteFinder";
 import { healthRules } from "@/lib/healthRules";
+import HealthWarnings from "@/components/FoodSafetyAlert";
+import jwt from "jsonwebtoken";
+import FoodSafetyAlert from "@/components/FoodSafetyAlert";
 
 const FoodSearch: React.FC = () => {
   const [barcode, setBarcode] = useState("");
@@ -24,6 +27,7 @@ const FoodSearch: React.FC = () => {
   const [substituteLoading, setSubstituteLoading] = useState(false);
   const [healthData, setHealthData] = useState({ healthIssues: [], allergies: [] });
   const [productInfo, setProductInfo] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     const userHealthData = JSON.parse(localStorage.getItem("userHealthData") || "{}");
@@ -74,11 +78,11 @@ const handleFindSubstitutes = async (product: any) => {
   const handleProductSelect = async (product: any) => {
     setSelectedProduct(product);
     handleFindSubstitutes(product);
+    fetchAdditionalProductInfo(product.product_name);
 
-    if (product.product_name) {
-      fetchAdditionalProductInfo(product.product_name);
-    }
   };
+
+  
 
   const fetchFoodByBarcode = async () => {
     if (!barcode) return;
@@ -119,6 +123,28 @@ const handleFindSubstitutes = async (product: any) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        console.log("token: ", token);
+        if (!token) return;
+        
+        const decoded = jwt.decode(token);
+        if (!decoded?.email) return;
+  
+        const response = await axios.get(`/api/profile?email=${encodeURIComponent(decoded.email)}`);
+        if (response.data.profile) {
+          console.log("profile: ", response.data.profile);
+          setUserProfile(response.data.profile);
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+      }
+    };
+    loadProfile();
+  }, []);
 
   return (
     <div className="w-[98%] mx-auto mt-6 px-4">
@@ -175,6 +201,13 @@ const handleFindSubstitutes = async (product: any) => {
           )}
         </div>
       </div>
+
+      {selectedProduct && userProfile && (
+  <FoodSafetyAlert 
+    product={selectedProduct} 
+    profile={userProfile} 
+  />
+)}
 
       {/* Substitutes Section */}
       {/* // sections/ProductDetails.tsx */}

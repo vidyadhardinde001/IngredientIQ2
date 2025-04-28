@@ -219,7 +219,7 @@ class FoodProductScraper {
   }
 
   private async scrapeTargetProduct(upc: string): Promise<ProductInfo> {
-    const url = `https://www.target.com/p/${upc}`;
+    const url = `https://www.nhs.uk/live-well/eat-well/${upc}`;
     const $ = await this.getWithRetry(url);
 
     // Extract product information
