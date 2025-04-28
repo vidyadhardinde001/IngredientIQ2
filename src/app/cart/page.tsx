@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import axios from "axios";
+import jwt from "jsonwebtoken";
+import CartSafetyAlert from "@/components/CartSafetyAlert";
 
 interface Product {
   id: string;
@@ -11,11 +14,13 @@ interface Product {
   countries_tags?: string[];
   allergens_tags?: string[];
   packaging_tags?: string[];
+  nutriments?: any;
 }
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<Product[]>([]);
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     const cart = JSON.parse(localStorage.getItem("cart") || "[]");
@@ -42,11 +47,33 @@ export default function CartPage() {
       .replace(/(^\w|\s\w)/g, (m) => m.toUpperCase());
   };
 
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+        
+        const decoded = jwt.decode(token);
+        if (!decoded?.email) return;
+
+        const response = await axios.get(`/api/profile?email=${encodeURIComponent(decoded.email)}`);
+        if (response.data.profile) {
+          setUserProfile(response.data.profile);
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+      }
+    };
+    loadProfile();
+  }, []);
+
   return (
     <div className="container mx-auto p-4 max-w-4xl">
       <h1 className="text-2xl font-bold mb-6">
         Your Cart ({cartItems.length})
       </h1>
+
+      {userProfile && <CartSafetyAlert cartItems={cartItems} profile={userProfile} />}
 
       {cartItems.length === 0 ? (
         <div className="text-center py-10">
