@@ -179,5 +179,12 @@
   "vegetable oils": "High in omega-6",
   "salt": "High blood pressure, heart",
   "sunflower vegetable oils": "High omega-6 fatty",
-  "rapeseed vegetable oils": "High omega-6 fatty"
+  "rapeseed vegetable oils": "High omega-6 fatty",
+  "water": "Dehydration, water intoxic",
+  "carbon dioxide": "Respiratory issues at",
+  "colour e150d": "Possible carcinogenic effects in",
+  "acid": "Dental erosion and digestive",
+  "natural flavourings": "Generally recognized as safe (",
+  "flavour caffeine": "Insomnia, restlessness",
+  "phosphoric acid": "Dental erosion risk."
 }

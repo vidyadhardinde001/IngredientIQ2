@@ -6,9 +6,9 @@ const { RateLimiter } = require('limiter');
 const fs = require('fs');
 const path = require('path');
 
-const BASE_URL = 'https://www.fatsecret.com';
+const BASE_URL = 'https://www.ewg.org/foodscores/';
 const LIST_URL = `${BASE_URL}/calories-nutrition/food`;
-const OUTPUT_FILE = path.join(__dirname, 'fake_food_ratings.json');
+const OUTPUT_FILE = path.join(__dirname, 'food_ratings.json');
 const MAX_PRODUCTS = 10;
 const MAX_RETRIES = 3;
 const AGE_GROUPS = ['Kids', 'Adults', 'Seniors'];
