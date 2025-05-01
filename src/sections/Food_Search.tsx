@@ -39,24 +39,24 @@ const FoodSearch: React.FC = () => {
 
   // sections/Food_Search.tsx
 
-const handleFindSubstitutes = async (product: any) => {
-  if (!product) return;
-  setSubstituteLoading(true);
-  try {
-    const substitutes = await findSubstitutes(product, healthData);
-    
-    // // Additional filter for nutritional criteria
-    // const filteredSubstitutes = substitutes.filter(sub => 
-    //   isNutritionallyBetter(sub, product, healthData.healthIssues, healthRules)
-    // );
-    
-    setSubstitutes(substitutes);
-    // console.log(filteredSubstitutes);
-  } catch (error) {
-    console.error("Substitute search failed:", error);
-  }
-  setSubstituteLoading(false);
-};
+  const handleFindSubstitutes = async (product: any) => {
+    if (!product) return;
+    setSubstituteLoading(true);
+    try {
+      const substitutes = await findSubstitutes(product, healthData);
+
+      // // Additional filter for nutritional criteria
+      // const filteredSubstitutes = substitutes.filter(sub => 
+      //   isNutritionallyBetter(sub, product, healthData.healthIssues, healthRules)
+      // );
+
+      setSubstitutes(substitutes);
+      // console.log(filteredSubstitutes);
+    } catch (error) {
+      console.error("Substitute search failed:", error);
+    }
+    setSubstituteLoading(false);
+  };
 
   const fetchAdditionalProductInfo = async (name: string) => {
     if (!name) return;
@@ -82,7 +82,7 @@ const handleFindSubstitutes = async (product: any) => {
 
   };
 
-  
+
 
   const fetchFoodByBarcode = async () => {
     if (!barcode) return;
@@ -130,10 +130,10 @@ const handleFindSubstitutes = async (product: any) => {
         const token = localStorage.getItem('authToken');
         console.log("token: ", token);
         if (!token) return;
-        
+
         const decoded = jwt.decode(token);
         if (!decoded || typeof decoded === "string" || !("email" in decoded)) return;
-  
+
         const response = await axios.get(`/api/profile?email=${encodeURIComponent(decoded.email)}`);
         if (response.data.profile) {
           console.log("profile: ", response.data.profile);
@@ -180,10 +180,17 @@ const handleFindSubstitutes = async (product: any) => {
               <p className="text-black-500">{productInfo.healthConcerns}</p>
             </div>
           )}
-          
+
+          {selectedProduct && userProfile && (
+            <FoodSafetyAlert
+              product={selectedProduct}
+              profile={userProfile}
+            />
+          )}
+
           {selectedProduct && <DetailedInfo selectedProduct={selectedProduct} />}
           {/* {selectedProduct && <HealthInfo selectedProduct={selectedProduct} />} */}
-          
+
           {selectedProduct && (
             <NutritionalChart
               labels={["Energy", "Carbs", "Fat", "Sugars", "Salt", "Fibre", "Proteins"]}
@@ -202,56 +209,46 @@ const handleFindSubstitutes = async (product: any) => {
         </div>
       </div>
 
-      {selectedProduct && userProfile && (
-  <FoodSafetyAlert 
-    product={selectedProduct} 
-    profile={userProfile} 
-  />
-)}
 
-      {/* Substitutes Section */}
-      {/* // sections/ProductDetails.tsx */}
 
-{/* Add this section under the main product details */}
-{/* // Update the substitutes section in Food_Search.tsx */}
-{substitutes.length > 0 && (
-  <div className="mt-8">
-    <h2 className="text-2xl font-bold text-white mb-4">Healthier Alternatives</h2>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {substitutes.map((sub) => (
-        <div key={sub.code || sub._id || sub.product_name} className="bg-gray-800 p-4 rounded-lg">
-          {sub.image_url ? (
-            <img 
-              src={sub.image_url} 
-              alt={sub.product_name} 
-              className="w-full h-48 object-contain mb-4"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/placeholder-product.png';
-              }}
-            />
-          ) : (
-            <div className="w-full h-48 bg-gray-700 flex items-center justify-center mb-4">
-              <span className="text-gray-400">No image available</span>
-            </div>
-          )}
-          <h3 className="text-lg font-semibold text-white">
-            {sub.product_name || "Unnamed Product"}
-          </h3>
-          <div className="mt-2 text-sm text-gray-300">
-            {sub.brands && <p>Brand: {sub.brands}</p>}
-            {sub.quantity && <p>Size: {sub.quantity}</p>}
+      {substitutes.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-2xl font-semibold text-black mb-4">Healthier Alternatives</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {substitutes.map((sub) => (
+              <div key={sub.code || sub._id || sub.product_name} className="bg-gray-800 p-4 rounded-lg">
+                {sub.image_url ? (
+                  <img
+                    src={sub.image_url}
+                    alt={sub.product_name}
+                    className="w-full h-48 object-contain mb-4"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/placeholder-product.png';
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-48 bg-gray-700 flex items-center justify-center mb-4">
+                    <span className="text-gray-400">No image available</span>
+                  </div>
+                )}
+                <h3 className="text-lg font-semibold text-white">
+                  {sub.product_name || "Unnamed Product"}
+                </h3>
+                <div className="mt-2 text-sm text-gray-300">
+                  {sub.brands && <p>Brand: {sub.brands}</p>}
+                  {sub.quantity && <p>Size: {sub.quantity}</p>}
+                </div>
+                <button
+                  onClick={() => handleProductSelect(sub)}
+                  className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg transition-colors"
+                >
+                  View Details
+                </button>
+              </div>
+            ))}
           </div>
-          <button 
-            onClick={() => handleProductSelect(sub)} 
-            className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg transition-colors"
-          >
-            View Details
-          </button>
         </div>
-      ))}
-    </div>
-  </div>
-)}
+      )}
 
       {substituteLoading && <p className="text-purple-500 mt-2 text-center">Finding healthier alternatives...</p>}
       {error && <p className="text-red-500 text-center mt-4">{error}</p>}
