@@ -1,7 +1,7 @@
 // app/api/proxy/route.ts
 import { NextResponse } from 'next/server';
 
-const TIMEOUT = 20000; // 10 seconds
+const TIMEOUT = 30000; // 10 seconds
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -26,14 +26,21 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     clearTimeout(timeoutId);
-    return new NextResponse(JSON.stringify({ 
-        error: error.name === 'AbortError' ? 'Request timed out' : 'Failed to fetch data'
-      }), {
-      status: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json',
-      },
-    });
+  
+    const errorMessage =
+      error instanceof Error && error.name === 'AbortError'
+        ? 'Request timed out'
+        : 'Failed to fetch data';
+  
+    return new NextResponse(
+      JSON.stringify({ error: errorMessage }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
   }
+  
 }

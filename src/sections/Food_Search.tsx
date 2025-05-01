@@ -132,7 +132,7 @@ const handleFindSubstitutes = async (product: any) => {
         if (!token) return;
         
         const decoded = jwt.decode(token);
-        if (!decoded?.email) return;
+        if (!decoded || typeof decoded === "string" || !("email" in decoded)) return;
   
         const response = await axios.get(`/api/profile?email=${encodeURIComponent(decoded.email)}`);
         if (response.data.profile) {

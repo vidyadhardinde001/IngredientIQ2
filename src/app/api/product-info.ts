@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import Redis from 'ioredis'
 
-const redis = new Redis(process.env.REDIS_URL)
+const redis = new Redis(process.env.REDIS_URL || '');
+
 
 export default async function handler(
   req: NextApiRequest,

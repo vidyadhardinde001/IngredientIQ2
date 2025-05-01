@@ -18,7 +18,7 @@ export default function ReportMissingFood() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!foodName.trim()) {
       setError("Please enter a food name");
       return;
@@ -55,10 +55,13 @@ export default function ReportMissingFood() {
       setIngredients("");
       setDescription("");
     } catch (err) {
-      setError(err.message || "Something went wrong");
-    } finally {
-      setIsSubmitting(false);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Something went wrong");
+      }
     }
+
   };
 
   return (
@@ -66,7 +69,7 @@ export default function ReportMissingFood() {
       <h1 className="text-2xl font-bold text-teal-700 flex items-center mb-6">
         <FaUtensils className="mr-2" /> Report Missing Food
       </h1>
-      
+
       {isSuccess ? (
         <div className="p-4 bg-green-100 text-green-700 rounded-lg mb-4 flex items-center">
           <FaCheckCircle className="mr-2" />
@@ -76,9 +79,9 @@ export default function ReportMissingFood() {
         <>
           <p className="mb-4 text-gray-600">
             Help us improve our recommendations by letting us know about foods that
-            aren't currently in our database.
+            aren&apos;t currently in our database.
           </p>
-          
+
           {error && (
             <div className="p-4 bg-red-100 text-red-700 rounded-lg mb-4">
               {error}

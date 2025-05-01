@@ -1,6 +1,6 @@
 // lib/substituteFinder.ts
 
-import { HealthCondition, healthRules } from "@/lib/healthRules";
+import { HealthCondition, HealthRules } from "@/lib/healthRules";
 
 import axios from "axios";
 
@@ -40,7 +40,7 @@ export const isNutritionallyBetter = (
   product: Product,
   originalProduct: Product,
   healthIssues: string[],
-  healthRules: typeof healthRules
+  healthRules: HealthRules
 ): boolean => {
   const nutrition = product.nutriments || {};
   const originalNutrition = originalProduct.nutriments || {};
@@ -49,16 +49,20 @@ export const isNutritionallyBetter = (
     const condition = issue.toLowerCase() as HealthCondition;
     const rules = healthRules[condition] || {};
 
-    if (rules.maxSugarPer100g) {
+    if ('maxSugarPer100g' in rules) {
       const subSugar = Number(nutrition.sugars_100g) || 0;
       const origSugar = Number(originalNutrition.sugars_100g) || 0;
-      return subSugar < Math.min(origSugar * 0.7, rules.maxSugarPer100g);
+      if (!(subSugar < Math.min(origSugar * 0.7, rules.maxSugarPer100g))) {
+        return false;
+      }
     }
 
-    if (rules.maxSaturatedFatPer100g) {
+    if ('maxSaturatedFatPer100g' in rules) {
       const subFat = Number(nutrition.saturated_fat_100g) || 0;
       const origFat = Number(originalNutrition.saturated_fat_100g) || 0;
-      return subFat < Math.min(origFat * 0.7, rules.maxSaturatedFatPer100g);
+      if (!(subFat < Math.min(origFat * 0.7, rules.maxSaturatedFatPer100g))) {
+        return false;
+      }
     }
 
     return true;

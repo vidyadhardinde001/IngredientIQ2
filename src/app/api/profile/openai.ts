@@ -2,7 +2,7 @@
 
 import { NextResponse } from 'next/server';
 
-export async function POST(req) {
+export async function POST(req: Request) {
   try {
     const body = await req.json();
     const requestId = Date.now(); // Unique identifier for each request
@@ -158,8 +158,11 @@ export async function POST(req) {
 
   } catch (error) {
     console.error("Server Error:", error);
+  
+    const message = error instanceof Error ? error.message : "Unknown error";
+  
     return NextResponse.json(
-      { error: "Internal server error", details: error.message },
+      { error: "Internal server error", details: message },
       { status: 500 }
     );
   }

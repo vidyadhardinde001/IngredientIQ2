@@ -69,8 +69,10 @@ export async function GET(request: Request) {
 
     // 🩺 Convert health concerns to bullet points
     let healthConcerns =
-      sections[1]?.split("\n").filter((line) => line.trim().startsWith("-")) ||
-      [];
+      sections[1]
+        ?.split("\n")
+        .filter((line: string) => line.trim().startsWith("-")) || [];
+
     if (healthConcerns.length === 0) {
       healthConcerns = ["✅ No major health concerns reported."];
     }

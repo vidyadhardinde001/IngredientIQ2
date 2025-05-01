@@ -98,7 +98,8 @@ const ProductDetails: React.FC<Props> = ({ selectedProduct }) => {
       const content = JSON.parse(data.choices[0].message.content);
 
       // Handle different possible response formats
-      let ratingsArray = [];
+      let ratingsArray: number[] = [];
+
       if (Array.isArray(content)) {
         ratingsArray = content;
       } else if (content.ratings) {

@@ -7,6 +7,14 @@ import { useRouter } from 'next/navigation';
 import { FiUser, FiUsers, FiTarget, FiPlus, FiEdit2, FiTrash2, FiCheck } from 'react-icons/fi';
 import jwt from "jsonwebtoken";
 import { getCurrentUser } from '@/lib/auth-utils';
+import { FC } from 'react';
+
+type Props = {
+  Icon: FC<{ className?: string }>;
+  tab: string;
+  activeTab: string;
+  label: string;
+};
 
 type HealthCondition = {
   id: string;
@@ -176,7 +184,7 @@ export default function ProfessionalProfilePage() {
       onClick={() => setActiveTab(tab)}
       className={`flex items-center px-4 py-3 rounded-lg transition-all ${activeTab === tab ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'}`}
     >
-      <Icon className={`mr-2 ${activeTab === tab ? 'text-indigo-600' : 'text-gray-500'}`} />
+      {/* <Icon className={`mr-2 ${activeTab === tab ? 'text-indigo-600' : 'text-gray-500'}`} /> */}
       <span className="font-medium">{label}</span>
     </button>
   );

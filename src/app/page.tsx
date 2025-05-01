@@ -3,10 +3,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import jwt from "jsonwebtoken";
 import FoodSearch from "@/sections/Food_Search";
-import Hero from "@/sections/Hero";
-import IngredientScanPage from "@/sections/barcode";
-import AI from "@/sections/AI";
-import Main from "@/sections/Main";
 import Login from "@/sections/Login";
 
 import Link from "next/link";
