@@ -58,11 +58,13 @@ const FoodSearch: React.FC = () => {
     setSubstituteLoading(false);
   };
 
-  const fetchAdditionalProductInfo = async (name: string) => {
+  const fetchAdditionalProductInfo = async (name: string,ingredientsText: string) => {
     if (!name) return;
     setLoading(true);
     try {
-      const { data } = await axios.get(`/api/product-info?productName=${encodeURIComponent(name)}`);
+      const { data } = await axios.get(
+        `/api/product-info?productName=${encodeURIComponent(name)}&ingredients=${encodeURIComponent(ingredientsText)}`
+      );
       if (data.error) {
         setError(data.error);
       } else {
@@ -78,7 +80,7 @@ const FoodSearch: React.FC = () => {
   const handleProductSelect = async (product: any) => {
     setSelectedProduct(product);
     handleFindSubstitutes(product);
-    fetchAdditionalProductInfo(product.product_name);
+    fetchAdditionalProductInfo(product.product_name,product.ingredients_text || "");
 
   };
 
