@@ -1,99 +1,177 @@
 // src/app/api/product-info/route.ts
 import { NextResponse } from "next/server";
 import Redis from "ioredis";
+import axios from "axios";
+import * as cheerio from "cheerio";
+import ingredients from "./ingrediant.json";
 
 const redis = new Redis(process.env.REDIS_URL!);
+
+function sanitizeHtml(text: string): string {
+  return text
+    .replace(/<[^>]*>?/gm, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function scrapeProductDescription(productName: string): Promise<string> {
+  try {
+    const response = await axios.get(
+      `https://en.wikipedia.org/w/api.php`,
+      {
+        params: {
+          action: "query",
+          format: "json",
+          prop: "extracts",
+          exintro: true,
+          titles: productName
+        },
+        headers: {
+          "User-Agent": "FoodSearchApp/1.0 (contact@example.com)"
+        },
+        timeout: 5000
+      }
+    );
+    
+    const pages = response.data.query.pages;
+    const pageId = Object.keys(pages)[0];
+    return sanitizeHtml(pages[pageId]?.extract || "");
+  } catch (error) {
+    console.error("Wikipedia scraping error:", error);
+    return "";
+  }
+}
+
+function getHealthConcerns(ingredientsText: string): string[] {
+  const concerns: string[] = [];
+  const ingredientList = ingredientsText
+    .toLowerCase()
+    .split(/[,;]| and |\(|\)|\//)
+    .map(item => item.trim().replace(/\./g, '').replace(/\bpowder\b|\boil\b/g, '')) // Remove common modifiers
+    .filter(item => item.length > 2);
+
+  ingredients.forEach((item: { ingredient: string; health_concern: string }) => {
+    const lowerIngredient = item.ingredient.toLowerCase();
+    ingredientList.forEach(ing => {
+      // Improved matching for compound ingredients
+      const matchScore = lowerIngredient.split(' ').filter(word => 
+        ing.includes(word) || word.includes(ing)
+      ).length;
+      
+      if (matchScore > 0) {
+        concerns.push(item.health_concern);
+      }
+    });
+  });
+
+  return [...new Set(concerns)];
+}
+
+async function scrapeAdditionalHealthInfo(ingredient: string): Promise<string> {
+  try {
+    // Try Wikipedia health effects section
+    const wikiResponse = await axios.get(
+      `https://en.wikipedia.org/wiki/${encodeURIComponent(ingredient)}`,
+      {
+        headers: {
+          "User-Agent": "FoodSearchApp/1.0 (contact@example.com)"
+        },
+        timeout: 5000
+      }
+    );
+
+    const $wiki = cheerio.load(wikiResponse.data);
+    const healthContent = $wiki('#Health_effects, .health-risks').first().text();
+    
+    if (healthContent.length > 50) {
+      return sanitizeHtml(healthContent).substring(0, 200);
+    }
+
+    // Fallback to WebMD
+    const webmdResponse = await axios.get(
+      `https://www.webmd.com/vitamins/ai/ingredientmono-1/${encodeURIComponent(ingredient)}`,
+      {
+        headers: {
+          "User-Agent": "FoodSearchApp/1.0 (contact@example.com)"
+        },
+        timeout: 5000
+      }
+    );
+
+    const $webmd = cheerio.load(webmdResponse.data);
+    return sanitizeHtml($webmd('.monograph-content p').first().text()).substring(0, 200);
+  } catch (error) {
+    console.error(`Health scraping error for ${ingredient}:`, error);
+    return ""; // Return empty string on failure
+  }
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const productName = searchParams.get("productName")?.trim();
+  const ingredientsText = searchParams.get("ingredients")?.trim() || "";
 
   if (!productName) {
     return NextResponse.json(
-      { error: "❌ Product name is required." },
+      { error: "Product name is required" },
       { status: 400 }
     );
   }
 
   try {
-    // 🔍 Check if data is already cached
     const cacheKey = `product-info:${productName.toLowerCase()}`;
     const cachedData = await redis.get(cacheKey);
 
     if (cachedData) {
-      console.log(`✅ [CACHE HIT] Fetched "${productName}" from Redis.`);
       return NextResponse.json(JSON.parse(cachedData));
     }
 
-    console.log(
-      `🔍 [FETCHING] Generating response for "${productName}" using OpenAI.`
+    // Scrape product description
+    const rawDescription = await scrapeProductDescription(productName);
+    const description = rawDescription 
+      ? `${sanitizeHtml(rawDescription).substring(0, 300)}...`
+      : "Product description not available.";
+
+    // Get health concerns
+    const healthConcerns = getHealthConcerns(ingredientsText);
+    const missingIngredients = ingredientsText
+      .split(/[,;]| and /)
+      .map(item => item.trim())
+      .filter(item => 
+        item.length > 2 && 
+        !ingredients.some(i => 
+          i.ingredient.toLowerCase().includes(item.toLowerCase()) ||
+          item.toLowerCase().includes(i.ingredient.toLowerCase())
+        )
+      );
+
+    // Scrape additional concerns
+    const scrapedResults = await Promise.all(
+      missingIngredients.slice(0, 3).map(async ingredient => {
+        const concern = await scrapeAdditionalHealthInfo(ingredient);
+        return concern ? `${ingredient}: ${concern}` : null;
+      })
     );
 
-    // 🔑 Ensure API key is available
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      throw new Error("❌ OpenAI API key is missing.");
-    }
+    const finalHealthConcerns = [
+      ...healthConcerns,
+      ...scrapedResults.filter(Boolean)
+    ].slice(0, 5);
 
-    // 📜 Construct the prompt for OpenAI
-    const prompt = `
-      Provide a **concise 2-line description** of the product **"${productName}"**, including its history, manufacturer, and primary use.
-      Then, list any **known health concerns** associated with this product in **bullet points**.
-    `;
-
-    // 🎯 Fetch response from OpenAI
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 200,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error("❌ Failed to fetch response from OpenAI.");
-    }
-
-    const data = await response.json();
-    const responseText =
-      data.choices[0]?.message?.content || "No response available.";
-
-    // 📝 Extract description and health concerns
-    const sections = responseText.split("\n\n");
-    const description = sections[0]?.trim() || "No description available.";
-
-    // 🩺 Convert health concerns to bullet points
-    let healthConcerns =
-      sections[1]
-        ?.split("\n")
-        .filter((line: string) => line.trim().startsWith("-")) || [];
-
-    if (healthConcerns.length === 0) {
-      healthConcerns = ["✅ No major health concerns reported."];
-    }
-
-    // 🎯 Final structured response
     const result = {
       productName,
       description,
-      healthConcerns,
+      healthConcerns: finalHealthConcerns.length > 0 
+        ? finalHealthConcerns 
+        : ["No major health concerns identified through automated analysis"]
     };
 
-    // ⏳ Store in Redis cache for 24 hours
-    await redis.set(cacheKey, JSON.stringify(result));
-
-    console.log(`✅ [CACHE STORE] Stored data for "${productName}" in Redis.`);
+    await redis.set(cacheKey, JSON.stringify(result), "EX", 86400);
     return NextResponse.json(result);
   } catch (error: any) {
-    console.error(`❌ [ERROR] ${error.message}`);
-
+    console.error("API Error:", error);
     return NextResponse.json(
-      { error: error.message || "Something went wrong." },
+      { error: "Failed to gather product information. Please try again later." },
       { status: 500 }
     );
   }

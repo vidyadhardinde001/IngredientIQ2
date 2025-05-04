@@ -74,7 +74,7 @@ const ProductDetails: React.FC<Props> = ({ selectedProduct }) => {
       }
 
       const prompt = `Provide health ratings (1-10) for "${selectedProduct.product_name}" for these age groups: 
-      Children (3-12), Adults (20+). 
+      Children (3-12), Adults (20+) and rating for adults should be strictly > children. 
       Return only a JSON array like: [1,2]`;
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -110,7 +110,7 @@ const ProductDetails: React.FC<Props> = ({ selectedProduct }) => {
 
       const ratings = AGE_GROUPS.map((ageGroup, index) => ({
         ageGroup,
-        rating: ratingsArray[index] || 5
+        rating: ratingsArray[index] || 9
       }));
 
       setHealthRatings(ratings);

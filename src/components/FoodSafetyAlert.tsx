@@ -1,3 +1,5 @@
+// components/FoodSafetyAlert.tsx
+
 "use client";
 import React from "react";
 import { FiAlertTriangle, FiCheckCircle } from "react-icons/fi";

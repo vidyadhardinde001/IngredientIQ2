@@ -1,6 +1,4 @@
-// lib/substituteFinder.ts
-
-import { HealthCondition, HealthRules } from "@/lib/healthRules";
+import { HealthCondition, healthRules } from "@/lib/healthRules";
 
 import axios from "axios";
 
@@ -40,7 +38,7 @@ export const isNutritionallyBetter = (
   product: Product,
   originalProduct: Product,
   healthIssues: string[],
-  healthRules: HealthRules
+  healthRules: typeof healthRules
 ): boolean => {
   const nutrition = product.nutriments || {};
   const originalNutrition = originalProduct.nutriments || {};
@@ -49,46 +47,20 @@ export const isNutritionallyBetter = (
     const condition = issue.toLowerCase() as HealthCondition;
     const rules = healthRules[condition] || {};
 
-    if ('maxSugarPer100g' in rules) {
+    if (rules.maxSugarPer100g) {
       const subSugar = Number(nutrition.sugars_100g) || 0;
       const origSugar = Number(originalNutrition.sugars_100g) || 0;
-      if (!(subSugar < Math.min(origSugar * 0.7, rules.maxSugarPer100g))) {
-        return false;
-      }
+      return subSugar < Math.min(origSugar * 0.7, rules.maxSugarPer100g);
     }
 
-    if ('maxSaturatedFatPer100g' in rules) {
+    if (rules.maxSaturatedFatPer100g) {
       const subFat = Number(nutrition.saturated_fat_100g) || 0;
       const origFat = Number(originalNutrition.saturated_fat_100g) || 0;
-      if (!(subFat < Math.min(origFat * 0.7, rules.maxSaturatedFatPer100g))) {
-        return false;
-      }
+      return subFat < Math.min(origFat * 0.7, rules.maxSaturatedFatPer100g);
     }
 
     return true;
   });
-};
-
-export const getChatGPTSubstitutes = async (productName: string, healthData: HealthData): Promise<string[]> => {
-  try {
-    const response = await fetch('/api/product-info/substitutes', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ productName,healthIssues: healthData.healthIssues,
-        allergies: healthData.allergies }),
-    });
-
-    if (!response.ok) throw new Error('Failed to get substitutes from ChatGPT');
-    
-    const data = await response.json();
-    console.log("substitues: ", data);
-    return data.substitutes;
-  } catch (error) {
-    console.error('ChatGPT substitute search failed:', error);
-    return [];
-  }
 };
 
 export const findSubstitutes = async (
@@ -96,29 +68,17 @@ export const findSubstitutes = async (
   healthData: HealthData
 ): Promise<Product[]> => {
   try {
-    const chatGPTSubstitutes = await getChatGPTSubstitutes(originalProduct.product_name || originalProduct.code || '', healthData);
-    
-    const verifiedSubstitutes = await Promise.all(
-      chatGPTSubstitutes.map(async (substituteName) => {
-        try {
-          const response = await axios.get(
-            `/api/proxy?query=${encodeURIComponent(
-              `search_terms=${substituteName}&json=1&page_size=1`
-            )}`
-          );
-          return response.data.products?.[0] || null;
-        } catch (error) {
-          console.error(`Failed to fetch ${substituteName}:`, error);
-          return null;
-        }
-      })
+    const category = getProductCategory(originalProduct);
+    const response = await axios.get(
+      `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(category)}&json=1&sort_by=popularity&page_size=30`
     );
 
-    return verifiedSubstitutes.filter((product): product is Product => (
-      product !== null &&
+    return response.data.products?.filter((product: Product) => (
       product.code !== originalProduct.code &&
-      !hasAllergens(product, healthData.allergies)
-    )).slice(0, 5);
+      !hasAllergens(product, healthData.allergies) &&
+      isNutritionallyBetter(product, originalProduct, healthData.healthIssues, healthRules) &&
+      isWidelyAvailable(product)
+    )).slice(0, 5) || [];
   } catch (error) {
     console.error("Substitute search failed:", error);
     return [];
