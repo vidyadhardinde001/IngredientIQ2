@@ -1,6 +1,7 @@
 // /section/DetailedInfo.tsx
 
 import React, { useState, useEffect } from "react";
+import NutritionalChart from "./NutritionalChart";
 
 interface Props {
   selectedProduct: any;

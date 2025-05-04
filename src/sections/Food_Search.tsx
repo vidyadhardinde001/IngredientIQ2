@@ -172,25 +172,6 @@ const FoodSearch: React.FC = () => {
             {loading ? <SkeletonLoader type="details" /> : selectedProduct && <ProductDetails selectedProduct={selectedProduct} />}
           </div>
 
-          {selectedProduct && productInfo && (
-            <div className="bg-gray-100 p-4 rounded-lg">
-              <h2 className="text-xl font-semibold">Additional Information</h2>
-              <p className="text-gray-700">{productInfo.description}</p>
-              <h3 className="mt-2 text-lg font-semibold">Health Concerns:</h3>
-              <p className="text-black-500">{productInfo.healthConcerns}</p>
-            </div>
-          )}
-
-          {selectedProduct && userProfile && (
-            <FoodSafetyAlert
-              product={selectedProduct}
-              profile={userProfile}
-            />
-          )}
-
-          {selectedProduct && <DetailedInfo selectedProduct={selectedProduct} />}
-          {/* {selectedProduct && <HealthInfo selectedProduct={selectedProduct} />} */}
-
           {selectedProduct && (
             <NutritionalChart
               labels={["Energy", "Carbs", "Fat", "Sugars", "Salt", "Fibre", "Proteins"]}
@@ -206,6 +187,29 @@ const FoodSearch: React.FC = () => {
               label="Nutrition Per 100g"
             />
           )}
+
+          {selectedProduct && productInfo && (
+            <div className="bg-gray-100 p-4 rounded-lg">
+              <h2 className="text-xl font-semibold">Additional Information</h2>
+              <p className="text-gray-700">{productInfo.description}</p>
+              <h3 className="mt-2 text-lg font-semibold">Health Concerns:</h3>
+              <p className="text-black-500">{productInfo.healthConcerns}</p>
+            </div>
+          )}
+
+          
+
+          {selectedProduct && userProfile && (
+            <FoodSafetyAlert
+              product={selectedProduct}
+              profile={userProfile}
+            />
+          )}
+
+          {selectedProduct && <DetailedInfo selectedProduct={selectedProduct} />}
+          {/* {selectedProduct && <HealthInfo selectedProduct={selectedProduct} />} */}
+
+          
         </div>
       </div>
 

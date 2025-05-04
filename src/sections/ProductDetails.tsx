@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { FaShoppingCart } from "react-icons/fa";
+import { FaShoppingCart, FaInfoCircle, FaLeaf, FaGlobe, FaTag, FaAllergies, FaBoxOpen } from "react-icons/fa";
+import { GiHealthNormal } from "react-icons/gi";
 
 interface Product {
   id: string;
@@ -73,8 +74,8 @@ const ProductDetails: React.FC<Props> = ({ selectedProduct }) => {
       }
 
       const prompt = `Provide health ratings (1-10) for "${selectedProduct.product_name}" for these age groups: 
-      Children (3-12), Teenagers (13-19), Adults (20-64), Elderly (65+). 
-      Return only a JSON array like: [1,2,3,2]`;
+      Children (3-12), Adults (20+). 
+      Return only a JSON array like: [1,2]`;
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -97,7 +98,6 @@ const ProductDetails: React.FC<Props> = ({ selectedProduct }) => {
       const data = await response.json();
       const content = JSON.parse(data.choices[0].message.content);
 
-      // Handle different possible response formats
       let ratingsArray: number[] = [];
 
       if (Array.isArray(content)) {
@@ -108,10 +108,9 @@ const ProductDetails: React.FC<Props> = ({ selectedProduct }) => {
         ratingsArray = Object.values(content);
       }
 
-      // Create age group rating objects
       const ratings = AGE_GROUPS.map((ageGroup, index) => ({
         ageGroup,
-        rating: ratingsArray[index] || 5 // Default to 5 if no rating
+        rating: ratingsArray[index] || 5
       }));
 
       setHealthRatings(ratings);
@@ -120,7 +119,7 @@ const ProductDetails: React.FC<Props> = ({ selectedProduct }) => {
       setRatingError("Failed to load health ratings. Showing sample data.");
       setHealthRatings(AGE_GROUPS.map(ageGroup => ({
         ageGroup,
-        rating: Math.floor(Math.random() * 5) + 5 // Random rating between 5-10
+        rating: Math.floor(Math.random() * 5) + 5
       })));
     } finally {
       setLoadingRatings(false);
@@ -211,139 +210,167 @@ const ProductDetails: React.FC<Props> = ({ selectedProduct }) => {
   };
 
   return (
-    <div className="bg-gray-800 h-full p-6 rounded-lg shadow-md">
-      <div className="flex flex-col md:flex-row gap-6">
-        <div className="w-full md:w-1/3 flex flex-col gap-4">
-          <div className="flex-1 bg-gray-800 rounded-lg">
-            {selectedProduct.image_url ? (
-              <img
-                src={selectedProduct.image_url}
-                alt="Product"
-                className="w-full h-full object-contain rounded-lg bg-white"
-              />
-            ) : (
-              <div className="w-full h-64 bg-gray-700 rounded-lg flex items-center justify-center">
-                <p className="text-gray-500">No Image Available</p>
-              </div>
-            )}
-          </div>
-
-          <button
-            onClick={addToCart}
-            className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-colors"
-          >
-            <FaShoppingCart />
-            Add to Cart
-          </button>
-        </div>
-
-        <div className="w-full md:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-white mb-1">
-              Product Name:
-            </label>
-            <div className="w-full p-3 border rounded-md bg-gray-700 text-white">
-              {selectedProduct.product_name || "Not specified"}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-white mb-1">
-              Countries:
-            </label>
-            <div className="w-full p-3 border rounded-md bg-gray-700 text-white">
-              {getCountries()}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-white mb-1">
-              Category:
-            </label>
-            <div className="w-full p-3 border rounded-md bg-gray-700 text-white">
-              {getCategory()}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-white mb-1">
-              Threatened Species:
-            </label>
-            <div className="w-full p-3 border rounded-md bg-gray-700 text-white">
-              {getThreatenedSpecies()}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-white mb-1">
-              Allergens:
-            </label>
-            <div className="w-full p-3 border rounded-md bg-gray-700 text-white">
-              {getAllergens()}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-white mb-1">
-              Packaging:
-            </label>
-            <div className="w-full p-3 border rounded-md bg-gray-700 text-white">
-              {getPackaging()}
-            </div>
-          </div>
-
-          <div className="md:col-span-2">
-            <div className="bg-gray-700 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-white mb-3">Health Ratings</h3>
-
-              {loadingRatings ? (
-                <div className="flex justify-center py-4">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+    <div className="bg-gradient-to-br from-gray-900 to-gray-800 min-h-screen p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Product Image Section */}
+          <div className="w-full lg:w-2/5">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-gray-700">
+              {selectedProduct.image_url ? (
+                <img
+                  src={selectedProduct.image_url}
+                  alt={selectedProduct.product_name || "Product"}
+                  className="w-full h-96 object-contain rounded-lg"
+                />
+              ) : (
+                <div className="w-full h-96 bg-gray-700/50 rounded-lg flex items-center justify-center">
+                  <p className="text-gray-400">No Image Available</p>
                 </div>
-              ) : ratingError ? (
-                <div className="text-yellow-400 mb-4">{ratingError}</div>
-              ) : null}
+              )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {healthRatings.map((rating) => {
-                  // Determine color based on rating
-                  let bgColor = '';
-                  let textColor = '';
+              <div className="mt-6">
+                <button
+                  onClick={addToCart}
+                  className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-emerald-500/20"
+                >
+                  <FaShoppingCart className="text-lg" />
+                  <span className="font-medium">Add to Cart</span>
+                </button>
+              </div>
+            </div>
+          </div>
 
-                  if (rating.rating >= 8) {
-                    bgColor = 'bg-green-900/30';
-                    textColor = 'text-green-400';
-                  } else if (rating.rating >= 6) {
-                    bgColor = 'bg-yellow-900/30';
-                    textColor = 'text-yellow-400';
-                  } else {
-                    bgColor = 'bg-red-900/30';
-                    textColor = 'text-red-400';
-                  }
+          {/* Product Details Section */}
+          <div className="w-full lg:w-3/5">
+            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-gray-700">
+              <h1 className="text-3xl font-bold text-white mb-2">
+                {selectedProduct.product_name || "Unnamed Product"}
+              </h1>
 
-                  // Get icon for age group
-                  const getAgeIcon = () => {
-                    switch (rating.ageGroup) {
-                      case 'Children (3-12)':
-                        return '👶';
-                      case 'Teenagers (13-19)':
-                        return '🧑‍🎓';
-                      case 'Adults (20-64)':
-                        return '🧑‍💼';
-                      case 'Elderly (65+)':
-                        return '🧓';
-                      default:
-                        return '👤';
-                    }
-                  };
+              {selectedProduct.code && (
+                <p className="text-gray-400 mb-6">Product Code: {selectedProduct.code}</p>
+              )}
 
-                  return (
-                    <div key={rating.ageGroup} className={`${bgColor} p-4 rounded-lg flex flex-col items-center`}>
-                      <span className="text-3xl mb-2">{getAgeIcon()}</span>
-                      <span className={`${textColor} text-4xl font-bold`}>{rating.rating}</span>
+              {/* Basic Info Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div className="bg-gray-800/50 p-4 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FaGlobe className="text-blue-400" />
+                    <h3 className="font-medium text-white">Origin</h3>
+                  </div>
+                  <p className="text-gray-300">{getCountries()}</p>
+                </div>
+
+                <div className="bg-gray-800/50 p-4 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FaTag className="text-purple-400" />
+                    <h3 className="font-medium text-white">Category</h3>
+                  </div>
+                  <p className="text-gray-300">{getCategory()}</p>
+                </div>
+
+                <div className="bg-gray-800/50 p-4 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FaAllergies className="text-red-400" />
+                    <h3 className="font-medium text-white">Allergens</h3>
+                  </div>
+                  <p className="text-gray-300">{getAllergens()}</p>
+                </div>
+
+                <div className="bg-gray-800/50 p-4 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FaBoxOpen className="text-yellow-400" />
+                    <h3 className="font-medium text-white">Packaging</h3>
+                  </div>
+                  <p className="text-gray-300">{getPackaging()}</p>
+                </div>
+              </div>
+
+              {/* Sustainability Section */}
+              <div className="mb-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <FaLeaf className="text-green-400 text-xl" />
+                  <h2 className="text-xl font-semibold text-white">Sustainability</h2>
+                </div>
+                <div className="bg-gray-800/50 p-4 rounded-lg">
+                  <p className="text-gray-300">{getThreatenedSpecies()}</p>
+                </div>
+              </div>
+
+              {/* Health Ratings Section */}
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <GiHealthNormal className="text-blue-400 text-xl" />
+                  <h2 className="text-xl font-semibold text-white">Health Ratings</h2>
+                </div>
+
+                {loadingRatings ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : ratingError ? (
+                  <div className="bg-yellow-900/20 border border-yellow-800 rounded-lg p-4 mb-6">
+                    <div className="flex items-center gap-2 text-yellow-400">
+                      <FaInfoCircle />
+                      <span>{ratingError}</span>
                     </div>
-                  );
-                })}
+                  </div>
+                ) : null}
+
+                <div className="grid grid-cols-2 gap-4">
+                  {healthRatings
+                    .filter(rating =>
+                      rating.ageGroup === 'Children (3-12)' ||
+                      rating.ageGroup === 'Adults (20-64)'
+                    )
+                    .map((rating) => {
+                      // Determine color based on rating
+                      let bgColor = '';
+                      let textColor = '';
+                      let borderColor = '';
+
+                      if (rating.rating >= 8) {
+                        bgColor = 'bg-green-900/20';
+                        textColor = 'text-green-400';
+                        borderColor = 'border-green-800';
+                      } else if (rating.rating >= 6) {
+                        bgColor = 'bg-yellow-900/20';
+                        textColor = 'text-yellow-400';
+                        borderColor = 'border-yellow-800';
+                      } else {
+                        bgColor = 'bg-red-900/20';
+                        textColor = 'text-red-400';
+                        borderColor = 'border-red-800';
+                      }
+
+                      // Get icon for age group
+                      const getAgeIcon = () => {
+                        switch (rating.ageGroup) {
+                          case 'Adults (20-64)':
+                            return '🧑‍💼';
+                          case 'Children (3-12)':
+                            return '👶';
+                          default:
+                            return '👤';
+                        }
+                      };
+
+                      return (
+                        <div
+                          key={rating.ageGroup}
+                          className={`${bgColor} ${borderColor} border p-4 rounded-xl flex flex-col items-center transition-all hover:scale-105`}
+                        >
+                          <span className="text-4xl mb-2">{getAgeIcon()}</span>
+                          <span className="text-sm text-gray-300 mb-1 text-center">{rating.ageGroup}</span>
+                          <div className="flex items-center justify-center">
+                            <span className={`${textColor} text-4xl font-bold`}>{rating.rating}</span>
+                            <span className="text-gray-400 text-lg ml-1">/10</span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  }
+                </div>
               </div>
             </div>
           </div>
